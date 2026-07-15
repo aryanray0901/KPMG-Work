@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Variance Insights</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner"><span class="logo">KPMG</span><span class="tag">Variance Insights</span></div></div>
+<div class="wrap">
+  <h1>Turn a data table into variance commentary.</h1>
+  <p class="sub">Upload Actual vs. Budget (or Prior Period, or Forecast) figures. It computes variances, flags what's
+  material, and drafts commentary bullets you can review and finish — then exports a client-ready slide and workbook.</p>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form action="/process" method="post" enctype="multipart/form-data">
+    <div class="card">
+      <h2>Data</h2>
+      <p class="hint">An Excel or CSV file with a label column plus two numeric columns (e.g. "Line Item", "Q4 Actual", "Q4 Budget"). Column names are auto-detected.</p>
+      <input type="file" name="data_file" accept=".xlsx,.xls,.csv" required>
+    </div>
+
+    <div class="card">
+      <h2>Settings</h2>
+      <div class="config-grid">
+        <div>
+          <label class="field-label">Slide / report title</label>
+          <input type="text" name="title" placeholder="Q4 Financial Overview vs. Budget" value="Q4 Financial Overview">
+        </div>
+        <div>
+          <label class="field-label">Subtitle (optional)</label>
+          <input type="text" name="subtitle" placeholder="Advisory practice performance versus budget">
+        </div>
+        <div>
+          <label class="field-label">Comparison column label</label>
+          <input type="text" name="comparison_label" placeholder="Budget" value="Budget">
+        </div>
+        <div>
+          <label class="field-label">Currency unit suffix</label>
+          <input type="text" name="currency_suffix" placeholder="M" value="M">
+        </div>
+        <div>
+          <label class="field-label">Materiality threshold (%)</label>
+          <input type="number" name="materiality_pct" value="10" step="1" min="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" type="submit">Analyze →</button>
+    </div>
+  </form>
+
+  <footer class="note">Files are processed locally on this machine for this session only.</footer>
+</div>
+</body>
+</html>

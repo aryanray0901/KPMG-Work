@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Result — Variance Insights</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner"><span class="logo">KPMG</span><span class="tag">Variance Insights</span></div></div>
+<div class="wrap">
+  <h1>Slide and workbook ready.</h1>
+  <p class="sub">
+    {% if rendering_ok %}
+      Here's the real rendered slide.
+    {% else %}
+      {% if soffice_missing %}Install LibreOffice for a rendered preview here — the files below are complete and correct either way.{% else %}Preview unavailable, but the files below are complete and correct.{% endif %}
+    {% endif %}
+  </p>
+
+  <div class="actions" style="margin-bottom:28px;">
+    <a class="btn" href="/download/{{ sid }}/pptx">Download PowerPoint slide</a>
+    <a class="btn secondary" href="/download/{{ sid }}/xlsx">Download Excel workbook</a>
+    <a class="btn secondary" href="/">Start over</a>
+  </div>
+
+  {% if rendering_ok %}
+  <div class="preview-frame">
+    <img src="/preview_image/{{ sid }}" alt="Variance analysis slide preview">
+  </div>
+  {% endif %}
+
+  <footer class="note">Both exports are KPMG-styled and ready to drop into a client deck or workbook.</footer>
+</div>
+</body>
+</html>

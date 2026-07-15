@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review — Variance Insights</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner"><span class="logo">KPMG</span><span class="tag">Variance Insights</span></div></div>
+<div class="wrap">
+  <h1>Review the analysis.</h1>
+  <p class="sub">Detected <b>{{ config.label_col }}</b> as the line-item label, <b>{{ config.actual_col }}</b> as Actual, and
+  <b>{{ config.comparison_col }}</b> as {{ config.comparison_label }}. Uncheck anything you don't want in the commentary,
+  and edit the drafted text — it's a starting point, not a final answer.</p>
+
+  <div class="stat-row">
+    <div class="stat"><b>{{ total_count }}</b>line items</div>
+    <div class="stat"><b>{{ material_count }}</b>material</div>
+    <div class="stat"><b>{{ favorable_count }}</b>favorable</div>
+    <div class="stat"><b>{{ unfavorable_count }}</b>unfavorable</div>
+  </div>
+
+  <form action="/export/{{ sid }}" method="post">
+    <div class="card">
+      <h2>Variance table</h2>
+      <table class="var-table">
+        <tr>
+          <th>Line Item</th>
+          <th class="num">{{ config.actual_col }}</th>
+          <th class="num">{{ config.comparison_label }}</th>
+          <th class="num">Variance</th>
+          <th class="num">Variance %</th>
+          <th>Flag</th>
+        </tr>
+        {% for row in rows %}
+        <tr>
+          <td>{{ row.label }}</td>
+          <td class="num">{{ row.actual_display }}</td>
+          <td class="num">{{ row.comparison_display }}</td>
+          <td class="num {{ 'var-pos' if row.variance >= 0 else 'var-neg' }}">{{ row.variance_display }}</td>
+          <td class="num {{ 'var-pos' if row.variance >= 0 else 'var-neg' }}">{{ row.variance_pct_display }}</td>
+          <td><span class="tag-badge tag-{{ row.tag|lower }}">{{ row.tag }}</span></td>
+        </tr>
+        {% if row.is_material or row.tag in ['Favorable', 'Unfavorable'] %}
+        <tr class="commentary-row">
+          <td colspan="6">
+            <label class="include-check">
+              <input type="checkbox" name="include_{{ loop.index0 }}" {{ 'checked' if row.is_material }}>
+              Include in commentary export
+            </label>
+            <textarea name="commentary_{{ loop.index0 }}">{{ row.commentary }}</textarea>
+          </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </table>
+    </div>
+
+    <div class="actions">
+      <button class="btn" type="submit">Generate slide &amp; workbook →</button>
+      <a class="btn secondary" href="/">Start over</a>
+    </div>
+  </form>
+</div>
+</body>
+</html>
