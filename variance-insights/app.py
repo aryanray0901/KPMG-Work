@@ -29,7 +29,7 @@ import pandas as pd
 from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
-from pptx.enum.text import PP_ALIGN
+from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -249,8 +249,11 @@ def build_pptx(rows, title, subtitle, comparison_label, out_path):
     bar.fill.fore_color.rgb = KPMG_BLUE
     bar.line.fill.background()
     tf = bar.text_frame
+    tf.word_wrap = False
+    tf.auto_size = MSO_AUTO_SIZE.NONE
     tf.margin_left = Inches(0.3)
     p = tf.paragraphs[0]
+    p.alignment = PP_ALIGN.LEFT
     r = p.add_run()
     r.text = "KPMG"
     r.font.size = Pt(24)
@@ -259,6 +262,8 @@ def build_pptx(rows, title, subtitle, comparison_label, out_path):
     r.font.name = "Arial"
 
     title_box = slide.shapes.add_textbox(Inches(3.4), Inches(0.12), Inches(9.6), Inches(0.65))
+    title_box.text_frame.word_wrap = True
+    title_box.text_frame.auto_size = MSO_AUTO_SIZE.NONE
     tp = title_box.text_frame.paragraphs[0]
     tp.alignment = PP_ALIGN.RIGHT
     tr = tp.add_run()
@@ -270,6 +275,8 @@ def build_pptx(rows, title, subtitle, comparison_label, out_path):
 
     if subtitle:
         sub_box = slide.shapes.add_textbox(Inches(0.4), Inches(1.0), Inches(9), Inches(0.35))
+        sub_box.text_frame.word_wrap = True
+        sub_box.text_frame.auto_size = MSO_AUTO_SIZE.NONE
         sp = sub_box.text_frame.paragraphs[0]
         sr = sp.add_run()
         sr.text = subtitle
@@ -329,6 +336,8 @@ def build_pptx(rows, title, subtitle, comparison_label, out_path):
         cy = Inches(1.5) + Inches(0.35 * table_rows) + Inches(0.25)
         max_h = prs.slide_height - cy - Inches(0.3)
         label_box = slide.shapes.add_textbox(Inches(0.4), cy, Inches(4), Inches(0.3))
+        label_box.text_frame.word_wrap = True
+        label_box.text_frame.auto_size = MSO_AUTO_SIZE.NONE
         lp = label_box.text_frame.paragraphs[0]
         lr = lp.add_run()
         lr.text = "Key Variance Commentary"
@@ -339,6 +348,7 @@ def build_pptx(rows, title, subtitle, comparison_label, out_path):
         box = slide.shapes.add_textbox(Inches(0.4), cy + Inches(0.35), Inches(12.5), max_h - Inches(0.35))
         btf = box.text_frame
         btf.word_wrap = True
+        btf.auto_size = MSO_AUTO_SIZE.NONE
         for i, row in enumerate(commentary_rows):
             para = btf.paragraphs[0] if i == 0 else btf.add_paragraph()
             run = para.add_run()

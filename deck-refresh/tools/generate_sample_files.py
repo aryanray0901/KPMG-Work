@@ -8,7 +8,7 @@ from pptx.chart.data import ChartData
 from pptx.dml.color import RGBColor
 from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
 from pptx.enum.shapes import MSO_SHAPE
-from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
+from pptx.enum.text import PP_ALIGN, MSO_ANCHOR, MSO_AUTO_SIZE
 from pptx.util import Inches, Pt
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -51,6 +51,8 @@ def add_text(slide, text, x, y, w, h, size=18, bold=False, color=TEXT,
         shape.line.fill.background()
     tf = shape.text_frame
     tf.clear()
+    tf.word_wrap = True
+    tf.auto_size = MSO_AUTO_SIZE.NONE
     tf.margin_left = Inches(margin)
     tf.margin_right = Inches(margin)
     tf.margin_top = Inches(margin)
@@ -86,7 +88,10 @@ def add_kpi(slide, x, y, w, h, value, label, accent=BLUE):
     stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(x), Inches(y), Inches(0.08), Inches(h))
     stripe.fill.solid(); stripe.fill.fore_color.rgb = accent; stripe.line.fill.background()
     tf = card.text_frame
-    tf.clear(); tf.margin_left = Inches(0.18); tf.margin_right = Inches(0.12)
+    tf.clear()
+    tf.word_wrap = True
+    tf.auto_size = MSO_AUTO_SIZE.NONE
+    tf.margin_left = Inches(0.18); tf.margin_right = Inches(0.12)
     tf.margin_top = Inches(0.10); tf.margin_bottom = Inches(0.08)
     p1 = tf.paragraphs[0]
     p1.text = value
