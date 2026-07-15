@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Close Cockpit</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner"><span class="logo">KPMG</span><span class="tag">Close Cockpit</span></div></div>
+<div class="wrap">
+  <h1>Close Cockpit</h1>
+  <p class="sub">Runs a full quarter-close package from a single upload: an updated deck, a variance analysis
+  derived from the same numbers, and optionally a benchmarking slide and an action item tracker. Everything is
+  reviewable before any file is generated.</p>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form action="/process" method="post" enctype="multipart/form-data">
+    <div class="pipeline-stage">
+      <h2><span class="stage-badge">1</span>Prior-quarter deck</h2>
+      <p class="hint">The PowerPoint to update. Numbers are matched and updated exactly as in Deck Refresh.</p>
+      <input type="file" name="deck_file" accept=".pptx" required>
+    </div>
+
+    <div class="pipeline-stage">
+      <h2><span class="stage-badge">2</span>New quarter data</h2>
+      <p class="hint">Excel or CSV with the new figures. These same matched values drive the variance analysis automatically.</p>
+      <input type="file" name="data_file" accept=".xlsx,.xls,.csv" required>
+    </div>
+
+    <div class="pipeline-stage">
+      <h2><span class="stage-badge optional">3</span>Peer benchmark data<span class="optional-tag">Optional</span></h2>
+      <p class="hint">A metric column, a target column, and one or more peer columns. Adds a benchmarking slide to the package.</p>
+      <input type="file" name="peer_file" accept=".xlsx,.xls,.csv">
+    </div>
+
+    <div class="pipeline-stage">
+      <h2><span class="stage-badge optional">4</span>Meeting notes<span class="optional-tag">Optional</span></h2>
+      <p class="hint">Paste notes and/or upload a text file. Adds an action item tracker, follow-up email, and slide to the package.</p>
+      <textarea class="notes-area" name="notes_text" placeholder="- Sarah Chen will send the trial balance by Friday.&#10;- James Cole to review the draft workplan and confirm scope by 7/18."></textarea>
+      <div style="margin-top:14px;">
+        <input type="file" name="notes_file" accept=".txt">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Settings</h2>
+      <div class="config-grid">
+        <div>
+          <label class="field-label">Package title</label>
+          <input type="text" name="title" placeholder="Q4 FY26 Quarter Close Package" value="Q4 FY26 Quarter Close Package">
+        </div>
+        <div>
+          <label class="field-label">Subtitle</label>
+          <input type="text" name="subtitle" placeholder="Advisory Practice — Client Engagement">
+        </div>
+        <div>
+          <label class="field-label">Comparison label</label>
+          <input type="text" name="comparison_label" placeholder="Budget" value="Budget">
+        </div>
+        <div>
+          <label class="field-label">Materiality threshold (%)</label>
+          <input type="number" name="materiality_pct" value="5" step="1" min="0">
+        </div>
+        <div>
+          <label class="field-label">Target/client name (for benchmarking)</label>
+          <input type="text" name="target_name" placeholder="Client name">
+        </div>
+        <div>
+          <label class="field-label">Meeting title (for action items)</label>
+          <input type="text" name="meeting_title" placeholder="Quarter Close Call">
+        </div>
+        <div>
+          <label class="field-label">Attendees (comma-separated)</label>
+          <input type="text" name="attendees" placeholder="Sarah Chen, James Cole">
+        </div>
+        <div>
+          <label class="field-label">Your name (for the follow-up email)</label>
+          <input type="text" name="sender_name" placeholder="Alex Rivera">
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" type="submit">Run the close package →</button>
+    </div>
+  </form>
+
+  <footer class="note">Everything runs locally. No file is transmitted to an external service.</footer>
+</div>
+</body>
+</html>

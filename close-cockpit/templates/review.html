@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review — Close Cockpit</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner"><span class="logo">KPMG</span><span class="tag">Close Cockpit</span></div></div>
+<div class="wrap">
+  <h1>Pipeline results.</h1>
+  <p class="sub">Every stage that ran is below. Review the drafted content, then generate the package.</p>
+
+  <div class="big-stats">
+    <div class="big-stat"><div class="num">{{ matched|length }}</div><div class="lbl">Figures matched</div></div>
+    <div class="big-stat"><div class="num">{{ material_count }}</div><div class="lbl">Material variances</div></div>
+    <div class="big-stat"><div class="num">{{ favorable_count }}</div><div class="lbl">Favorable</div></div>
+    <div class="big-stat"><div class="num">{{ unfavorable_count }}</div><div class="lbl">Unfavorable</div></div>
+    {% if benchmark_rows %}<div class="big-stat"><div class="num">{{ benchmark_rows|length }}</div><div class="lbl">Metrics benchmarked</div></div>{% endif %}
+    {% if action_items %}<div class="big-stat"><div class="num">{{ action_items|length }}</div><div class="lbl">Action items</div></div>{% endif %}
+  </div>
+
+  <form action="/generate/{{ sid }}" method="post">
+    <div class="pipeline-stage">
+      <h2><span class="stage-badge">1</span>Deck matching{% if unmatched %}<span class="optional-tag">{{ unmatched|length }} left unchanged</span>{% endif %}</h2>
+      <p class="hint">{{ matched|length }} figures matched and will be updated automatically, using the same
+      guarded matching as Deck Refresh. {{ unmatched|length }} figure{{ 's' if unmatched|length != 1 else '' }}
+      had no confident match and will be left as-is.
+      {% if period_replacements %}Headings will update: {% for old, new in period_replacements.items() %}{{ old }} → {{ new }}{{ ", " if not loop.last }}{% endfor %}.{% endif %}</p>
+    </div>
+
+    <div class="pipeline-stage">
+      <h2><span class="stage-badge">2</span>Variance analysis</h2>
+      <p class="hint">Drafted from the same numbers just matched above. Uncheck or edit anything before it's included.</p>
+      {% for c in variance_commentary %}
+      <div class="commentary-row" style="border-bottom:1px solid var(--line); padding:10px 0;">
+        <label class="include-check">
+          <input type="checkbox" name="include_commentary_{{ loop.index0 }}" checked>
+          Include
+        </label>
+        <textarea name="commentary_{{ loop.index0 }}">{{ c }}</textarea>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if benchmark_rows %}
+    <div class="pipeline-stage">
+      <h2><span class="stage-badge optional">3</span>Benchmarking</h2>
+      <table class="var-table">
+        <tr><th></th><th>Metric</th><th class="num">Target</th><th class="num">Peer Median</th><th class="num">Percentile</th><th>Positioning</th></tr>
+        {% for r in benchmark_rows %}
+        <tr>
+          <td><input type="checkbox" name="include_bench_{{ loop.index0 }}" checked></td>
+          <td>{{ r.metric }}</td>
+          <td class="num">{{ "%.1f"|format(r.target) }}</td>
+          <td class="num">{{ "%.1f"|format(r.peer_median) }}</td>
+          <td class="num">{{ "%.0f"|format(r.percentile) if r.percentile is not none else "n/a" }}th</td>
+          <td><span class="tag-badge quartile-{{ r.quartile_class }}">{{ r.quartile }}</span></td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% endif %}
+
+    {% if action_items %}
+    <div class="pipeline-stage">
+      <h2><span class="stage-badge optional">4</span>Action items</h2>
+      {% for item in action_items %}
+      <div class="item-row">
+        <div class="item-row-header">
+          <input type="checkbox" name="include_action_{{ loop.index0 }}" {{ 'checked' if item.include }}>
+          <span class="owner-badge">{{ item.owner }}</span>
+          {% if item.priority == 'High' %}<span class="priority-high">High priority</span>{% endif %}
+        </div>
+        <div class="item-fields">
+          <textarea name="action_text_{{ loop.index0 }}">{{ item.text }}</textarea>
+          <input type="text" name="action_owner_{{ loop.index0 }}" value="{{ item.owner }}">
+          <input type="text" name="action_due_{{ loop.index0 }}" value="{{ item.due }}">
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="actions">
+      <button class="btn" type="submit">Generate the close package →</button>
+      <a class="btn secondary" href="/">Start over</a>
+    </div>
+  </form>
+</div>
+</body>
+</html>

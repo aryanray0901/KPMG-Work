@@ -22,9 +22,15 @@ A workbench combining three tools for recurring engagement work. The Action Trac
 
 ![Engagement Hub](engagement-hub/screenshots/benchmarking.png)
 
+## [Close Cockpit](close-cockpit/)
+
+Orchestrates a full quarter-close package from a single set of uploads. It reuses the deck-matching engine from Deck Refresh to update the prior-quarter deck, derives a variance analysis directly from the same figures that matching just produced with no separate upload required, and optionally layers in a benchmarking analysis and a meeting-notes-derived action tracker. The result is an updated deck, a new executive package deck (cover, executive summary, variance detail, benchmarking, action items), supporting workbooks, a follow-up email draft, and a single zip file containing all of it, generated from one run and reviewed before anything is finalized.
+
+![Close Cockpit executive summary](close-cockpit/screenshots/package-slide-2.png)
+
 ## Running any tool
 
-Each folder is a self-contained local Flask application. See the README in each folder for setup instructions. All three:
+Each folder is a self-contained local Flask application. See the README in each folder for setup instructions. All four:
 - Run entirely on the local machine; no data is transmitted externally
 - Include a double-click launcher for Mac and Windows
 - Include a fictional sample dataset for immediate testing

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Result — Close Cockpit</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner"><span class="logo">KPMG</span><span class="tag">Close Cockpit</span></div></div>
+<div class="wrap">
+  <h1>Quarter close package ready.</h1>
+  <p class="sub">
+    {% if not meta.rendering_ok and soffice_missing %}Install LibreOffice for a rendered preview here — every file below is complete and correct either way.{% endif %}
+  </p>
+
+  <div class="big-stats">
+    <div class="big-stat"><div class="num">{{ meta.matched_count }}</div><div class="lbl">Figures updated</div></div>
+    <div class="big-stat"><div class="num">{{ meta.material_count }}</div><div class="lbl">Material variances</div></div>
+    <div class="big-stat"><div class="num">{{ meta.favorable_count }}</div><div class="lbl">Favorable</div></div>
+    <div class="big-stat"><div class="num">{{ meta.unfavorable_count }}</div><div class="lbl">Unfavorable</div></div>
+    {% if meta.has_benchmark %}<div class="big-stat"><div class="num">{{ meta.benchmark_top_count }}</div><div class="lbl">Top quartile metrics</div></div>{% endif %}
+    {% if meta.has_actions %}<div class="big-stat"><div class="num">{{ meta.action_count }}</div><div class="lbl">Action items</div></div>{% endif %}
+  </div>
+
+  <div class="zip-download">
+    <div class="zip-text">
+      <h3>Download everything</h3>
+      <p>Updated deck, executive package, variance workbook{{ ", benchmark workbook" if meta.has_benchmark }}{{ ", action tracker, follow-up email" if meta.has_actions }} — one zip file.</p>
+    </div>
+    <a class="btn" href="/download/{{ sid }}/zip">Download package (.zip)</a>
+  </div>
+
+  <div class="download-grid">
+    <a class="download-card" href="/download/{{ sid }}/deck">
+      <span class="file-icon">▤</span>
+      <div><div class="file-name">Updated deck</div><div class="file-desc">deck_updated.pptx</div></div>
+    </a>
+    <a class="download-card" href="/download/{{ sid }}/package">
+      <span class="file-icon">◫</span>
+      <div><div class="file-name">Executive package</div><div class="file-desc">executive_package.pptx</div></div>
+    </a>
+    <a class="download-card" href="/download/{{ sid }}/variance">
+      <span class="file-icon">✎</span>
+      <div><div class="file-name">Variance workbook</div><div class="file-desc">variance_analysis.xlsx</div></div>
+    </a>
+    {% if meta.has_benchmark %}
+    <a class="download-card" href="/download/{{ sid }}/benchmark">
+      <span class="file-icon">◫</span>
+      <div><div class="file-name">Benchmark workbook</div><div class="file-desc">benchmark_analysis.xlsx</div></div>
+    </a>
+    {% endif %}
+    {% if meta.has_actions %}
+    <a class="download-card" href="/download/{{ sid }}/actions">
+      <span class="file-icon">✓</span>
+      <div><div class="file-name">Action tracker</div><div class="file-desc">action_tracker.xlsx</div></div>
+    </a>
+    <a class="download-card" href="/download/{{ sid }}/email">
+      <span class="file-icon">✉</span>
+      <div><div class="file-name">Follow-up email</div><div class="file-desc">followup_email.txt</div></div>
+    </a>
+    {% endif %}
+  </div>
+
+  {% if meta.rendering_ok %}
+  <div class="card">
+    <h2>Executive package preview</h2>
+    <div class="slide-nav">
+      <button type="button" class="btn secondary" id="prev-btn">← Prev</button>
+      <div id="tab-row" class="tab-row"></div>
+      <button type="button" class="btn secondary" id="next-btn">Next →</button>
+    </div>
+    <div class="preview-frame">
+      <img id="package-img" src="" alt="Executive package slide">
+    </div>
+  </div>
+  <script>
+    const SID = {{ sid | tojson }};
+    const SLIDE_COUNT = {{ meta.slide_count }};
+    let current = 1;
+    const tabRow = document.getElementById("tab-row");
+    for (let i = 1; i <= SLIDE_COUNT; i++) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "tab-btn" + (i === 1 ? " active" : "");
+      btn.textContent = "Slide " + i;
+      btn.onclick = () => goTo(i);
+      tabRow.appendChild(btn);
+    }
+    function goTo(n) {
+      current = Math.max(1, Math.min(SLIDE_COUNT, n));
+      document.querySelectorAll(".tab-btn").forEach((b, idx) => b.classList.toggle("active", idx === current - 1));
+      document.getElementById("package-img").src = "/slide_image/" + SID + "/" + current;
+    }
+    document.getElementById("prev-btn").onclick = () => goTo(current - 1);
+    document.getElementById("next-btn").onclick = () => goTo(current + 1);
+    goTo(1);
+  </script>
+  {% endif %}
+
+  <div class="actions" style="margin-top:20px;">
+    <a class="btn secondary" href="/">Start over</a>
+  </div>
+</div>
+</body>
+</html>
