@@ -36,7 +36,7 @@ python app.py
 ```
 Then open `http://127.0.0.1:5090`.
 
-> Rendered slide previews require LibreOffice (free, available at libreoffice.org). Without it, the report and annotated workbook are still generated correctly; only the in-browser preview is unavailable.
+> The result page previews every report slide and every annotated workbook sheet. On Windows, PowerPoint renders the slides when installed. LibreOffice is the fallback on other systems. If neither renderer is available, the browser still shows the report text, tables, and chart data.
 
 ## Verification
 

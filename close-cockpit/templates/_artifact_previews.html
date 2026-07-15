@@ -1,0 +1,300 @@
+{% if preview_presentations or preview_workbooks or preview_texts %}
+<section class="preview-section" aria-label="Generated file previews">
+  <div class="preview-section-heading">
+    <div>
+      <h2>View every generated file</h2>
+      <p>Review the PowerPoint slides, Excel sheets, and text output here before downloading.</p>
+    </div>
+  </div>
+
+  <div class="artifact-grid">
+    {% for item in preview_presentations %}
+    <article class="artifact-card artifact-presentation">
+      <div class="artifact-card-heading">
+        <div>
+          <h3>{{ item.title }}</h3>
+          <span>{{ item.filename }}</span>
+        </div>
+        <a class="artifact-download" href="{{ item.download_url }}">Download</a>
+      </div>
+      <section class="ppt-window compact-ppt-window" id="ppt-{{ item.id }}" tabindex="0" aria-label="{{ item.title }} preview">
+        <header class="ppt-titlebar">
+          <div class="ppt-file-ident">
+            <span class="ppt-app-icon">P</span>
+            <div>
+              <strong>{{ item.filename }}</strong>
+              <span>{{ item.title }}</span>
+            </div>
+          </div>
+          <span class="deck-state updated-state">Preview</span>
+        </header>
+        <nav class="ppt-ribbon" aria-hidden="true">
+          <span class="active">Home</span><span>Insert</span><span>Design</span><span>Transitions</span><span>Slide Show</span><span>Review</span><span>View</span>
+        </nav>
+        <div class="ppt-workspace compact-ppt-workspace">
+          <aside class="ppt-thumbnails" data-role="thumbnails"></aside>
+          <main class="ppt-canvas-wrap">
+            <div class="ppt-slide-stage">
+              <div class="ppt-canvas-loading" data-role="loading">Loading preview...</div>
+              <img class="ppt-canvas" data-role="image" alt="{{ item.title }} slide" hidden>
+              <div class="ppt-fallback-slide" data-role="fallback" hidden></div>
+            </div>
+          </main>
+        </div>
+        <footer class="ppt-statusbar">
+          <div class="ppt-local-controls">
+            <button type="button" class="ppt-nav-btn" data-role="prev" aria-label="Previous slide">&#10094;</button>
+            <span data-role="counter"></span>
+            <button type="button" class="ppt-nav-btn" data-role="next" aria-label="Next slide">&#10095;</button>
+          </div>
+          <div class="ppt-status-right">
+            <span>{{ item.render_engine if item.rendering_ok else 'Browser text and data preview' }}</span>
+          </div>
+        </footer>
+      </section>
+      <script type="application/json" id="ppt-data-{{ item.id }}">{{ item | tojson }}</script>
+    </article>
+    {% endfor %}
+
+    {% for item in preview_workbooks %}
+    <article class="artifact-card artifact-workbook" id="workbook-{{ item.id }}">
+      <div class="artifact-card-heading">
+        <div>
+          <h3>{{ item.title }}</h3>
+          <span>{{ item.filename }}</span>
+        </div>
+        <a class="artifact-download" href="{{ item.download_url }}">Download</a>
+      </div>
+      <section class="excel-window" aria-label="{{ item.title }} preview">
+        <header class="excel-titlebar">
+          <div class="office-file-ident">
+            <span class="excel-app-icon">X</span>
+            <div><strong>{{ item.filename }}</strong><span>Excel workbook preview</span></div>
+          </div>
+          <span class="workbook-state">Live preview</span>
+        </header>
+        <nav class="excel-ribbon" aria-hidden="true"><span class="active">Home</span><span>Insert</span><span>Page Layout</span><span>Formulas</span><span>Data</span><span>Review</span><span>View</span></nav>
+        <div class="sheet-host" data-role="sheet-host"><div class="sheet-loading">Loading workbook...</div></div>
+        <footer class="excel-statusbar">
+          <div class="sheet-tabs" data-role="sheet-tabs"></div>
+          <div class="sheet-nav-groups">
+            <div class="sheet-page-controls">
+              <span class="sheet-nav-label">Rows</span>
+              <button type="button" data-role="page-prev">&#10094;</button>
+              <span data-role="page-status">1-1</span>
+              <button type="button" data-role="page-next">&#10095;</button>
+            </div>
+            <div class="sheet-page-controls">
+              <span class="sheet-nav-label">Columns</span>
+              <button type="button" data-role="column-prev">&#10094;</button>
+              <span data-role="column-status">A-A</span>
+              <button type="button" data-role="column-next">&#10095;</button>
+            </div>
+          </div>
+        </footer>
+      </section>
+      <script type="application/json" id="workbook-data-{{ item.id }}">{{ item | tojson }}</script>
+    </article>
+    {% endfor %}
+
+    {% for item in preview_texts %}
+    <article class="artifact-card artifact-text">
+      <div class="artifact-card-heading">
+        <div>
+          <h3>{{ item.title }}</h3>
+          <span>{{ item.filename }}</span>
+        </div>
+        <a class="artifact-download" href="{{ item.download_url }}">Download</a>
+      </div>
+      <div class="text-file-window">
+        <div class="text-file-titlebar"><span class="text-app-icon">T</span><strong>{{ item.filename }}</strong></div>
+        <pre>{{ item.content }}</pre>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<script>
+(function () {
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function renderFallbackSlide(host, slide) {
+    if (!slide || !slide.blocks || slide.blocks.length === 0) {
+      host.innerHTML = '<div class="fallback-empty">This slide has no extractable text.</div>';
+      return;
+    }
+    host.innerHTML = slide.blocks.map((block) => {
+      if (block.type === "text") {
+        return `<div class="fallback-text-block">${escapeHtml(block.content).replaceAll("\n", "<br>")}</div>`;
+      }
+      if (block.type === "table") {
+        const rows = (block.rows || []).map((row, rowIndex) =>
+          `<tr>${row.map((cell) => `<${rowIndex === 0 ? "th" : "td"}>${escapeHtml(cell)}</${rowIndex === 0 ? "th" : "td"}>`).join("")}</tr>`
+        ).join("");
+        return `<div class="fallback-table-wrap"><table>${rows}</table></div>`;
+      }
+      if (block.type === "chart") {
+        const categories = block.categories || [];
+        const head = `<tr><th>Series</th>${categories.map((c) => `<th>${escapeHtml(c)}</th>`).join("")}</tr>`;
+        const body = (block.series || []).map((series) =>
+          `<tr><th>${escapeHtml(series.name)}</th>${(series.values || []).map((v) => `<td>${escapeHtml(v)}</td>`).join("")}</tr>`
+        ).join("");
+        return `<div class="fallback-chart"><div class="fallback-chart-label">Chart data</div><div class="fallback-table-wrap"><table>${head}${body}</table></div></div>`;
+      }
+      return "";
+    }).join("");
+  }
+
+  document.querySelectorAll(".artifact-presentation").forEach((card) => {
+    const viewer = card.querySelector(".ppt-window");
+    const id = viewer.id.replace("ppt-", "");
+    const data = JSON.parse(document.getElementById(`ppt-data-${id}`).textContent);
+    const thumbnails = viewer.querySelector('[data-role="thumbnails"]');
+    const image = viewer.querySelector('[data-role="image"]');
+    const fallback = viewer.querySelector('[data-role="fallback"]');
+    const loading = viewer.querySelector('[data-role="loading"]');
+    const counter = viewer.querySelector('[data-role="counter"]');
+    const prev = viewer.querySelector('[data-role="prev"]');
+    const next = viewer.querySelector('[data-role="next"]');
+    const count = Math.max(Number(data.slide_count || 0), (data.fallback_slides || []).length, 1);
+    let current = 1;
+
+    function slideUrl(number) {
+      return String(data.image_url || "").replace("__SLIDE__", String(number));
+    }
+
+    function show(number) {
+      current = Math.max(1, Math.min(count, number));
+      counter.textContent = `Slide ${current} of ${count}`;
+      prev.disabled = current === 1;
+      next.disabled = current === count;
+      thumbnails.querySelectorAll(".ppt-thumb").forEach((button) => {
+        button.classList.toggle("active", Number(button.dataset.slide) === current);
+      });
+      if (data.rendering_ok) {
+        loading.hidden = false;
+        fallback.hidden = true;
+        image.hidden = false;
+        image.classList.add("is-loading");
+        image.onload = () => { loading.hidden = true; image.classList.remove("is-loading"); };
+        image.onerror = () => {
+          image.hidden = true;
+          loading.hidden = true;
+          fallback.hidden = false;
+          renderFallbackSlide(fallback, (data.fallback_slides || [])[current - 1]);
+        };
+        image.src = slideUrl(current);
+      } else {
+        image.hidden = true;
+        loading.hidden = true;
+        fallback.hidden = false;
+        renderFallbackSlide(fallback, (data.fallback_slides || [])[current - 1]);
+      }
+    }
+
+    for (let number = 1; number <= count; number += 1) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "ppt-thumb";
+      button.dataset.slide = String(number);
+      button.setAttribute("aria-label", `Open slide ${number}`);
+      const numberLabel = document.createElement("span");
+      numberLabel.className = "ppt-thumb-number";
+      numberLabel.textContent = String(number);
+      button.appendChild(numberLabel);
+      if (data.rendering_ok) {
+        const thumb = document.createElement("img");
+        thumb.src = slideUrl(number);
+        thumb.alt = `Slide ${number}`;
+        thumb.loading = number <= 3 ? "eager" : "lazy";
+        button.appendChild(thumb);
+      } else {
+        const fallbackThumb = document.createElement("span");
+        fallbackThumb.className = "fallback-thumb";
+        fallbackThumb.textContent = `Slide ${number}`;
+        button.appendChild(fallbackThumb);
+      }
+      button.onclick = () => show(number);
+      thumbnails.appendChild(button);
+    }
+    prev.onclick = () => show(current - 1);
+    next.onclick = () => show(current + 1);
+    viewer.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowLeft") show(current - 1);
+      if (event.key === "ArrowRight") show(current + 1);
+    });
+    show(1);
+  });
+
+  document.querySelectorAll(".artifact-workbook").forEach((card) => {
+    const id = card.id.replace("workbook-", "");
+    const data = JSON.parse(document.getElementById(`workbook-data-${id}`).textContent);
+    const host = card.querySelector('[data-role="sheet-host"]');
+    const tabs = card.querySelector('[data-role="sheet-tabs"]');
+    const pagePrev = card.querySelector('[data-role="page-prev"]');
+    const pageNext = card.querySelector('[data-role="page-next"]');
+    const pageStatus = card.querySelector('[data-role="page-status"]');
+    const columnPrev = card.querySelector('[data-role="column-prev"]');
+    const columnNext = card.querySelector('[data-role="column-next"]');
+    const columnStatus = card.querySelector('[data-role="column-status"]');
+    let sheet = 0;
+    let page = 1;
+    let pages = 1;
+    let columnPage = 1;
+    let columnPages = 1;
+
+    function updateTabs() {
+      tabs.querySelectorAll("button").forEach((button) => {
+        button.classList.toggle("active", Number(button.dataset.sheet) === sheet);
+      });
+    }
+
+    async function loadSheet() {
+      host.innerHTML = '<div class="sheet-loading">Loading workbook...</div>';
+      try {
+        const separator = data.preview_url.includes("?") ? "&" : "?";
+        const response = await fetch(`${data.preview_url}${separator}sheet=${sheet}&page=${page}&column_page=${columnPage}`);
+        if (!response.ok) throw new Error("Preview request failed");
+        const result = await response.json();
+        host.innerHTML = result.html;
+        page = result.page;
+        pages = result.pages;
+        columnPage = result.column_page;
+        columnPages = result.column_pages;
+        pageStatus.textContent = `${result.start_row}-${result.end_row} of ${result.total_rows}`;
+        columnStatus.textContent = `${result.start_column_letter}-${result.end_column_letter} of ${result.total_columns}`;
+        pagePrev.disabled = page <= 1;
+        pageNext.disabled = page >= pages;
+        columnPrev.disabled = columnPage <= 1;
+        columnNext.disabled = columnPage >= columnPages;
+      } catch (error) {
+        host.innerHTML = '<div class="sheet-error">The workbook preview failed to load.</div>';
+      }
+      updateTabs();
+    }
+
+    (data.manifest.sheets || []).forEach((sheetInfo) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.sheet = String(sheetInfo.index);
+      button.textContent = sheetInfo.name;
+      button.onclick = () => { sheet = sheetInfo.index; page = 1; columnPage = 1; loadSheet(); };
+      tabs.appendChild(button);
+    });
+    pagePrev.onclick = () => { if (page > 1) { page -= 1; loadSheet(); } };
+    pageNext.onclick = () => { if (page < pages) { page += 1; loadSheet(); } };
+    columnPrev.onclick = () => { if (columnPage > 1) { columnPage -= 1; loadSheet(); } };
+    columnNext.onclick = () => { if (columnPage < columnPages) { columnPage += 1; loadSheet(); } };
+    loadSheet();
+  });
+})();
+</script>
+{% endif %}

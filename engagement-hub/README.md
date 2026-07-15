@@ -42,7 +42,7 @@ python app.py
 ```
 Then open `http://127.0.0.1:5070`.
 
-> Rendered slide previews require LibreOffice (free, available at libreoffice.org). Without it, each module still functions fully; the generated files are unaffected, and only the in-browser preview image is unavailable.
+> Each result page previews every generated file. On Windows, PowerPoint renders the slides when installed. LibreOffice is the fallback on other systems. If neither renderer is available, the browser still shows the slide text, tables, and chart data. Excel sheets and email drafts remain fully viewable in the browser.
 
 ## Verification
 

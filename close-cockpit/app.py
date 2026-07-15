@@ -31,7 +31,7 @@ import threading
 from statistics import median
 from collections import Counter
 
-from flask import Flask, request, render_template, send_file, redirect, url_for, flash, abort
+from flask import Flask, request, render_template, send_file, redirect, url_for, flash, abort, jsonify
 import pandas as pd
 from pptx import Presentation
 from pptx.util import Inches, Pt
@@ -1159,48 +1159,13 @@ def build_followup_email(items, meeting_title, sender_name, stats):
 
 
 # ===========================================================================
-# REAL SLIDE PREVIEW (LibreOffice + PyMuPDF)
+# GENERATED FILE PREVIEWS
 # ===========================================================================
 
-SOFFICE_PATH = shutil.which("soffice") or shutil.which("libreoffice")
-_soffice_lock = threading.Lock()
-try:
-    import fitz
-    HAVE_FITZ = True
-except ImportError:
-    HAVE_FITZ = False
-
-
-def render_pptx_to_images(pptx_path, out_dir, prefix):
-    if not (SOFFICE_PATH and HAVE_FITZ):
-        return None
-    os.makedirs(out_dir, exist_ok=True)
-    profile_dir = tempfile.mkdtemp(prefix="lo_profile_")
-    try:
-        with _soffice_lock:
-            result = subprocess.run(
-                [SOFFICE_PATH, "--headless", "--norestore",
-                 f"-env:UserInstallation=file://{profile_dir}",
-                 "--convert-to", "pdf", "--outdir", out_dir, pptx_path],
-                capture_output=True, timeout=120,
-            )
-        pdf_path = os.path.join(out_dir, os.path.splitext(os.path.basename(pptx_path))[0] + ".pdf")
-        if result.returncode != 0 or not os.path.exists(pdf_path):
-            return None
-        doc = fitz.open(pdf_path)
-        paths = []
-        for i, page in enumerate(doc):
-            pix = page.get_pixmap(matrix=fitz.Matrix(1.8, 1.8))
-            img_path = os.path.join(out_dir, f"{prefix}_{i+1}.png")
-            pix.save(img_path)
-            paths.append(img_path)
-        doc.close()
-        os.remove(pdf_path)
-        return paths if paths else None
-    except Exception:
-        return None
-    finally:
-        shutil.rmtree(profile_dir, ignore_errors=True)
+from preview_helpers import (
+    SOFFICE_PATH, POWERSHELL_PATH, HAVE_FITZ, render_pptx_to_images,
+    presentation_text_manifest, workbook_manifest, workbook_page,
+)
 
 
 def _session_dir(sid):
@@ -1419,7 +1384,9 @@ def generate(sid):
             f.write(email_text)
 
     render_dir = os.path.join(sess_dir, "render")
-    package_images = render_pptx_to_images(package_path, render_dir, "package")
+    shutil.rmtree(render_dir, ignore_errors=True)
+    deck_images, deck_engine = render_pptx_to_images(updated_deck_path, render_dir, "deck")
+    package_images, package_engine = render_pptx_to_images(package_path, render_dir, "package")
     rendering_ok = package_images is not None
 
     zip_path = os.path.join(sess_dir, "quarter_close_package.zip")
@@ -1432,6 +1399,10 @@ def generate(sid):
 
     _save_json(sess_dir, "meta.json", {
         "rendering_ok": rendering_ok, "slide_count": len(package_images) if package_images else 0,
+        "render_engine": package_engine,
+        "deck_rendering_ok": deck_images is not None,
+        "deck_slide_count": len(deck_images) if deck_images else 0,
+        "deck_render_engine": deck_engine,
         "matched_count": len(matched), "material_count": material_count,
         "favorable_count": favorable_count, "unfavorable_count": unfavorable_count,
         "has_benchmark": bool(benchmark_rows), "has_actions": bool(action_items),
@@ -1448,17 +1419,86 @@ def result(sid):
     if meta is None:
         flash("That session has expired. Please start again.")
         return redirect(url_for("index"))
-    return render_template("result.html", sid=sid, meta=meta,
-                            soffice_missing=not (SOFFICE_PATH and HAVE_FITZ))
+    preview_presentations = [
+        {
+            "id": "deck", "title": "Updated deck", "filename": "deck_updated.pptx",
+            "download_url": url_for("download", sid=sid, which="deck"),
+            "rendering_ok": meta.get("deck_rendering_ok", False),
+            "slide_count": meta.get("deck_slide_count", 0),
+            "render_engine": meta.get("deck_render_engine"),
+            "image_url": f"/slide_image/{sid}/deck/__SLIDE__",
+            "fallback_slides": presentation_text_manifest(os.path.join(sess_dir, "deck_updated.pptx")),
+        },
+        {
+            "id": "package", "title": "Executive package", "filename": "executive_package.pptx",
+            "download_url": url_for("download", sid=sid, which="package"),
+            "rendering_ok": meta.get("rendering_ok", False),
+            "slide_count": meta.get("slide_count", 0),
+            "render_engine": meta.get("render_engine"),
+            "image_url": f"/slide_image/{sid}/package/__SLIDE__",
+            "fallback_slides": presentation_text_manifest(os.path.join(sess_dir, "executive_package.pptx")),
+        },
+    ]
+    workbook_specs = [("variance", "Variance workbook", "variance_analysis.xlsx")]
+    if meta.get("has_benchmark"):
+        workbook_specs.append(("benchmark", "Benchmark workbook", "benchmark_analysis.xlsx"))
+    if meta.get("has_actions"):
+        workbook_specs.append(("actions", "Action tracker", "action_tracker.xlsx"))
+    preview_workbooks = []
+    for key, title, filename in workbook_specs:
+        workbook_path = os.path.join(sess_dir, filename)
+        if os.path.exists(workbook_path):
+            preview_workbooks.append({
+                "id": key, "title": title, "filename": filename,
+                "download_url": url_for("download", sid=sid, which=key),
+                "preview_url": f"/workbook_preview/{sid}/{key}",
+                "manifest": workbook_manifest(workbook_path),
+            })
+    preview_texts = []
+    email_path = os.path.join(sess_dir, "followup_email.txt")
+    if os.path.exists(email_path):
+        with open(email_path, encoding="utf-8") as f:
+            preview_texts.append({
+                "title": "Follow-up email", "filename": "followup_email.txt",
+                "download_url": url_for("download", sid=sid, which="email"),
+                "content": f.read(),
+            })
+    return render_template(
+        "result.html", sid=sid, meta=meta, preview_presentations=preview_presentations,
+        preview_workbooks=preview_workbooks, preview_texts=preview_texts,
+    )
 
 
-@app.route("/slide_image/<sid>/<int:n>", methods=["GET"])
-def slide_image(sid, n):
+@app.route("/slide_image/<sid>/<which>/<int:n>", methods=["GET"])
+def slide_image(sid, which, n):
+    if which not in {"deck", "package"}:
+        abort(404)
     sess_dir = _session_dir(sid)
-    path = os.path.join(sess_dir, "render", f"package_{n}.png")
+    path = os.path.join(sess_dir, "render", f"{which}_{n}.png")
     if not os.path.exists(path):
         abort(404)
     return send_file(path, mimetype="image/png")
+
+
+@app.route("/workbook_preview/<sid>/<which>", methods=["GET"])
+def workbook_preview(sid, which):
+    files = {
+        "variance": "variance_analysis.xlsx",
+        "benchmark": "benchmark_analysis.xlsx",
+        "actions": "action_tracker.xlsx",
+    }
+    if which not in files:
+        abort(404)
+    path = os.path.join(_session_dir(sid), files[which])
+    if not os.path.exists(path):
+        abort(404)
+    try:
+        sheet = int(request.args.get("sheet", 0))
+        page = int(request.args.get("page", 1))
+        column_page = int(request.args.get("column_page", 1))
+        return jsonify(workbook_page(path, sheet_index=sheet, page=page, column_page=column_page))
+    except (ValueError, IndexError):
+        abort(404)
 
 
 @app.route("/download/<sid>/<which>", methods=["GET"])

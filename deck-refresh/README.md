@@ -4,7 +4,7 @@
 
 Refreshing a quarterly report by hand typically involves retyping figures into table cells and charts one at a time, with a meaningful risk of errors or inconsistent formatting. This application automates that process: the user uploads the file to be updated and the new data, reviews the matched values, and receives the same file back with figures updated and formatting intact.
 
-![Executive summary slide, rendered by the app](screenshots/executive-summary.png)
+![The original and updated presentation side by side, in the synchronized dual viewer](screenshots/side-by-side-comparison.png)
 
 ## What it does
 

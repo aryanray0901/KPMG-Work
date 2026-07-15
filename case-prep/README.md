@@ -4,6 +4,8 @@
 
 This is a different kind of tool from the rest of this repository. The other five generate documents; this one is an interactive learning product: a case library, a framework reference, a fit/behavioral question bank, market sizing and mental math drills, and firm-by-firm interview format guides, covering McKinsey, BCG, Bain, Deloitte, PwC, EY, and KPMG.
 
+![Case Prep homepage](screenshots/homepage.png)
+
 ## What's included
 
 - **Case Library** (9 mock cases, one modeled after each target firm's known interview style, plus extras covering market sizing and a public-sector case): each case includes a prompt, common clarifying questions, a built-in timer, progressively revealed exhibits, a space to write your own structure and synthesis, and a model approach and synthesis to compare against afterward.

@@ -3,28 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Result — Executive Summary</title>
+<title>Result | Executive Summary</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-<div class="topbar"><div class="topbar-inner"><span class="logo">KPMG</span><span class="tag">Engagement Hub</span></div></div>
-<div class="wrap">
-  <h1>Slide and workbook ready.</h1>
-  <p class="sub">
-    {% if not rendering_ok and soffice_missing %}Install LibreOffice for a rendered preview here — the files below are complete and correct either way.{% endif %}
-  </p>
-
-  <div class="actions" style="margin-bottom:28px;">
-    <a class="btn" href="/summary/download/{{ sid }}/pptx">Download PowerPoint slide</a>
-    <a class="btn secondary" href="/summary/download/{{ sid }}/xlsx">Download Excel workbook</a>
-    <a class="btn secondary" href="/">Start over</a>
+<body class="result-page">
+<div class="topbar"><div class="topbar-inner"><span class="product-logo">KPMG</span><span class="brand-name">Engagement Hub</span><span class="tag">Executive Summary</span></div></div>
+<div class="wrap viewer-wrap">
+  <div class="result-heading">
+    <div><h1>Slide and workbook ready.</h1><p class="sub">Review both outputs side by side before downloading.</p></div>
+    <div class="actions result-actions"><a class="btn" href="/summary/download/{{ sid }}/pptx">Download slide</a><a class="btn secondary" href="/summary/download/{{ sid }}/xlsx">Download workbook</a><a class="btn secondary" href="/">Start over</a></div>
   </div>
-
-  {% if rendering_ok %}
-  <div class="preview-frame">
-    <img src="/summary/preview_image/{{ sid }}" alt="Executive summary slide preview">
-  </div>
-  {% endif %}
+  {% include '_artifact_previews.html' %}
 </div>
 </body>
 </html>

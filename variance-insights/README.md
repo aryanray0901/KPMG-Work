@@ -13,7 +13,7 @@ Preparing a variance analysis typically involves calculating the difference betw
 - **Flags material variances.** A configurable threshold, set to 10 percent by default, determines which variances are significant enough to warrant commentary.
 - **Drafts commentary for each material variance.** For example: "Days Sales Outstanding came in up 6 days (15.0%) versus Budget, an unfavorable variance that warrants explanation." Each draft includes a placeholder marking where the underlying explanation should be added by the reviewer.
 - **Exports two formats.** A KPMG-styled PowerPoint slide with color-coded favorable and unfavorable values, and a formatted Excel workbook containing the variance table and a separate commentary sheet.
-- **Displays a rendered preview of the output slide** prior to download, using the same LibreOffice-based rendering method as Deck Refresh.
+- **Displays both outputs before download.** The result page shows the PowerPoint slide and every Excel sheet side by side. PowerPoint is used for slide rendering on Windows when installed, with LibreOffice as the fallback. A browser text and data preview remains available when neither renderer is installed.
 
 ## Setup
 

@@ -34,7 +34,7 @@ import threading
 from datetime import datetime
 from statistics import median
 
-from flask import Flask, request, render_template, send_file, redirect, url_for, flash, abort
+from flask import Flask, request, render_template, send_file, redirect, url_for, flash, abort, jsonify
 import pandas as pd
 from pptx import Presentation
 from pptx.util import Inches, Pt
@@ -231,45 +231,13 @@ def thin_border():
 
 
 # ---------------------------------------------------------------------------
-# REAL SLIDE PREVIEW (LibreOffice + PyMuPDF)
+# GENERATED FILE PREVIEWS
 # ---------------------------------------------------------------------------
 
-SOFFICE_PATH = shutil.which("soffice") or shutil.which("libreoffice")
-_soffice_lock = threading.Lock()
-try:
-    import fitz
-    HAVE_FITZ = True
-except ImportError:
-    HAVE_FITZ = False
-
-
-def render_pptx_preview(pptx_path, out_png_path):
-    if not (SOFFICE_PATH and HAVE_FITZ):
-        return False
-    out_dir = os.path.dirname(out_png_path)
-    profile_dir = tempfile.mkdtemp(prefix="lo_profile_")
-    try:
-        with _soffice_lock:
-            result = subprocess.run(
-                [SOFFICE_PATH, "--headless", "--norestore",
-                 f"-env:UserInstallation=file://{profile_dir}",
-                 "--convert-to", "pdf", "--outdir", out_dir, pptx_path],
-                capture_output=True, timeout=90,
-            )
-        pdf_path = os.path.join(out_dir, os.path.splitext(os.path.basename(pptx_path))[0] + ".pdf")
-        if result.returncode != 0 or not os.path.exists(pdf_path):
-            return False
-        doc = fitz.open(pdf_path)
-        page = doc[0]
-        pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
-        pix.save(out_png_path)
-        doc.close()
-        os.remove(pdf_path)
-        return True
-    except Exception:
-        return False
-    finally:
-        shutil.rmtree(profile_dir, ignore_errors=True)
+from preview_helpers import (
+    SOFFICE_PATH, POWERSHELL_PATH, HAVE_FITZ, render_pptx_to_images,
+    presentation_text_manifest, workbook_manifest, workbook_page,
+)
 
 
 def _session_dir(sid):
@@ -857,9 +825,13 @@ def actions_export(sid):
     with open(os.path.join(sess_dir, "followup_email.txt"), "w") as f:
         f.write(email_text)
 
-    preview_path = os.path.join(sess_dir, "preview.png")
-    rendering_ok = render_pptx_preview(pptx_path, preview_path)
-    _save_json(sess_dir, "meta.json", {"rendering_ok": rendering_ok, "count": len(confirmed)})
+    render_dir = os.path.join(sess_dir, "render")
+    shutil.rmtree(render_dir, ignore_errors=True)
+    images, render_engine = render_pptx_to_images(pptx_path, render_dir, "actions")
+    _save_json(sess_dir, "meta.json", {
+        "rendering_ok": images is not None, "slide_count": len(images) if images else 0,
+        "render_engine": render_engine, "count": len(confirmed),
+    })
     return redirect(url_for("actions_result", sid=sid))
 
 
@@ -875,18 +847,30 @@ def actions_result(sid):
     if os.path.exists(email_path):
         with open(email_path) as f:
             email_text = f.read()
-    return render_template("actions_result.html", sid=sid, rendering_ok=meta.get("rendering_ok", False),
-                            count=meta.get("count", 0), email_text=email_text,
-                            soffice_missing=not (SOFFICE_PATH and HAVE_FITZ))
-
-
-@app.route("/actions/preview_image/<sid>", methods=["GET"])
-def actions_preview_image(sid):
-    sess_dir = _session_dir(sid)
-    path = os.path.join(sess_dir, "preview.png")
-    if not os.path.exists(path):
-        abort(404)
-    return send_file(path, mimetype="image/png")
+    preview_presentations = [{
+        "id": "actions", "title": "Action summary slide", "filename": "action_summary.pptx",
+        "download_url": url_for("actions_download", sid=sid, which="pptx"),
+        "rendering_ok": meta.get("rendering_ok", False),
+        "slide_count": meta.get("slide_count", 0), "render_engine": meta.get("render_engine"),
+        "image_url": f"/presentation_image/{sid}/actions/__SLIDE__",
+        "fallback_slides": presentation_text_manifest(os.path.join(sess_dir, "action_summary.pptx")),
+    }]
+    workbook_path = os.path.join(sess_dir, "action_tracker.xlsx")
+    preview_workbooks = [{
+        "id": "actions", "title": "Action tracker", "filename": "action_tracker.xlsx",
+        "download_url": url_for("actions_download", sid=sid, which="xlsx"),
+        "preview_url": f"/workbook_preview/{sid}/actions",
+        "manifest": workbook_manifest(workbook_path),
+    }]
+    preview_texts = [{
+        "title": "Follow-up email draft", "filename": "followup_email.txt",
+        "download_url": url_for("actions_download", sid=sid, which="email"), "content": email_text,
+    }]
+    return render_template(
+        "actions_result.html", sid=sid, count=meta.get("count", 0),
+        preview_presentations=preview_presentations, preview_workbooks=preview_workbooks,
+        preview_texts=preview_texts,
+    )
 
 
 @app.route("/actions/download/<sid>/<which>", methods=["GET"])
@@ -996,9 +980,13 @@ def summary_export(sid):
                         config["currency_suffix"], pptx_path)
     build_summary_xlsx(analysis, config["title"], config["label_col"], config["currency_suffix"], xlsx_path)
 
-    preview_path = os.path.join(sess_dir, "preview.png")
-    rendering_ok = render_pptx_preview(pptx_path, preview_path)
-    _save_json(sess_dir, "meta.json", {"rendering_ok": rendering_ok})
+    render_dir = os.path.join(sess_dir, "render")
+    shutil.rmtree(render_dir, ignore_errors=True)
+    images, render_engine = render_pptx_to_images(pptx_path, render_dir, "summary")
+    _save_json(sess_dir, "meta.json", {
+        "rendering_ok": images is not None, "slide_count": len(images) if images else 0,
+        "render_engine": render_engine,
+    })
     return redirect(url_for("summary_result", sid=sid))
 
 
@@ -1009,17 +997,25 @@ def summary_result(sid):
         flash("That session has expired. Please start again.")
         return redirect(url_for("summary_index"))
     meta = _load_json(sess_dir, "meta.json", {})
-    return render_template("summary_result.html", sid=sid, rendering_ok=meta.get("rendering_ok", False),
-                            soffice_missing=not (SOFFICE_PATH and HAVE_FITZ))
-
-
-@app.route("/summary/preview_image/<sid>", methods=["GET"])
-def summary_preview_image(sid):
-    sess_dir = _session_dir(sid)
-    path = os.path.join(sess_dir, "preview.png")
-    if not os.path.exists(path):
-        abort(404)
-    return send_file(path, mimetype="image/png")
+    preview_presentations = [{
+        "id": "summary", "title": "Executive summary slide", "filename": "executive_summary.pptx",
+        "download_url": url_for("summary_download", sid=sid, which="pptx"),
+        "rendering_ok": meta.get("rendering_ok", False),
+        "slide_count": meta.get("slide_count", 0), "render_engine": meta.get("render_engine"),
+        "image_url": f"/presentation_image/{sid}/summary/__SLIDE__",
+        "fallback_slides": presentation_text_manifest(os.path.join(sess_dir, "executive_summary.pptx")),
+    }]
+    workbook_path = os.path.join(sess_dir, "executive_summary.xlsx")
+    preview_workbooks = [{
+        "id": "summary", "title": "Executive summary workbook", "filename": "executive_summary.xlsx",
+        "download_url": url_for("summary_download", sid=sid, which="xlsx"),
+        "preview_url": f"/workbook_preview/{sid}/summary",
+        "manifest": workbook_manifest(workbook_path),
+    }]
+    return render_template(
+        "summary_result.html", sid=sid, preview_presentations=preview_presentations,
+        preview_workbooks=preview_workbooks, preview_texts=[],
+    )
 
 
 @app.route("/summary/download/<sid>/<which>", methods=["GET"])
@@ -1128,9 +1124,13 @@ def benchmark_export(sid):
     build_benchmark_pptx(included, config["title"], config["subtitle"], config["target_name"], pptx_path)
     build_benchmark_xlsx(included, config["title"], config["target_name"], xlsx_path)
 
-    preview_path = os.path.join(sess_dir, "preview.png")
-    rendering_ok = render_pptx_preview(pptx_path, preview_path)
-    _save_json(sess_dir, "meta.json", {"rendering_ok": rendering_ok})
+    render_dir = os.path.join(sess_dir, "render")
+    shutil.rmtree(render_dir, ignore_errors=True)
+    images, render_engine = render_pptx_to_images(pptx_path, render_dir, "benchmark")
+    _save_json(sess_dir, "meta.json", {
+        "rendering_ok": images is not None, "slide_count": len(images) if images else 0,
+        "render_engine": render_engine,
+    })
     return redirect(url_for("benchmark_result", sid=sid))
 
 
@@ -1141,17 +1141,25 @@ def benchmark_result(sid):
         flash("That session has expired. Please start again.")
         return redirect(url_for("benchmark_index"))
     meta = _load_json(sess_dir, "meta.json", {})
-    return render_template("benchmark_result.html", sid=sid, rendering_ok=meta.get("rendering_ok", False),
-                            soffice_missing=not (SOFFICE_PATH and HAVE_FITZ))
-
-
-@app.route("/benchmark/preview_image/<sid>", methods=["GET"])
-def benchmark_preview_image(sid):
-    sess_dir = _session_dir(sid)
-    path = os.path.join(sess_dir, "preview.png")
-    if not os.path.exists(path):
-        abort(404)
-    return send_file(path, mimetype="image/png")
+    preview_presentations = [{
+        "id": "benchmark", "title": "Benchmarking slide", "filename": "benchmark_analysis.pptx",
+        "download_url": url_for("benchmark_download", sid=sid, which="pptx"),
+        "rendering_ok": meta.get("rendering_ok", False),
+        "slide_count": meta.get("slide_count", 0), "render_engine": meta.get("render_engine"),
+        "image_url": f"/presentation_image/{sid}/benchmark/__SLIDE__",
+        "fallback_slides": presentation_text_manifest(os.path.join(sess_dir, "benchmark_analysis.pptx")),
+    }]
+    workbook_path = os.path.join(sess_dir, "benchmark_analysis.xlsx")
+    preview_workbooks = [{
+        "id": "benchmark", "title": "Benchmarking workbook", "filename": "benchmark_analysis.xlsx",
+        "download_url": url_for("benchmark_download", sid=sid, which="xlsx"),
+        "preview_url": f"/workbook_preview/{sid}/benchmark",
+        "manifest": workbook_manifest(workbook_path),
+    }]
+    return render_template(
+        "benchmark_result.html", sid=sid, preview_presentations=preview_presentations,
+        preview_workbooks=preview_workbooks, preview_texts=[],
+    )
 
 
 @app.route("/benchmark/download/<sid>/<which>", methods=["GET"])
@@ -1168,6 +1176,37 @@ def benchmark_download(sid, which):
     if not os.path.exists(path):
         abort(404)
     return send_file(path, as_attachment=True, download_name=fname, mimetype=mimetype)
+
+
+@app.route("/presentation_image/<sid>/<which>/<int:n>", methods=["GET"])
+def presentation_image(sid, which, n):
+    if which not in {"actions", "summary", "benchmark"}:
+        abort(404)
+    path = os.path.join(_session_dir(sid), "render", f"{which}_{n}.png")
+    if not os.path.exists(path):
+        abort(404)
+    return send_file(path, mimetype="image/png")
+
+
+@app.route("/workbook_preview/<sid>/<which>", methods=["GET"])
+def workbook_preview(sid, which):
+    files = {
+        "actions": "action_tracker.xlsx",
+        "summary": "executive_summary.xlsx",
+        "benchmark": "benchmark_analysis.xlsx",
+    }
+    if which not in files:
+        abort(404)
+    path = os.path.join(_session_dir(sid), files[which])
+    if not os.path.exists(path):
+        abort(404)
+    try:
+        sheet = int(request.args.get("sheet", 0))
+        page = int(request.args.get("page", 1))
+        column_page = int(request.args.get("column_page", 1))
+        return jsonify(workbook_page(path, sheet_index=sheet, page=page, column_page=column_page))
+    except (ValueError, IndexError):
+        abort(404)
 
 
 def _open_browser():

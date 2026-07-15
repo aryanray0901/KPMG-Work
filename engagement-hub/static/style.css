@@ -284,3 +284,72 @@ select{
 .item-fields{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;margin-left:26px;}
 @media (max-width:800px){.item-fields{grid-template-columns:1fr;}}
 .item-fields textarea{min-height:44px;font-size:13px;padding:8px;border:1px solid var(--line);border-radius:6px;font-family:'Inter',sans-serif;}
+
+
+/* Generated artifact previews */
+.preview-section{margin-top:30px;}
+.preview-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:14px;}
+.preview-section-heading h2{font-family:'Space Grotesk',sans-serif;color:var(--blue);font-size:21px;margin:0 0 3px;}
+.preview-section-heading p{margin:0;color:var(--ink-soft);font-size:13.5px;}
+.artifact-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start;}
+.artifact-card{min-width:0;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:0 2px 10px rgba(22,58,112,.06);}
+.artifact-card-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:1px 2px 12px;}
+.artifact-card-heading h3{font-family:'Space Grotesk',sans-serif;color:var(--blue);font-size:15px;margin:0;}
+.artifact-card-heading span{display:block;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;font-size:10.5px;margin-top:2px;}
+.artifact-download{border:1px solid var(--blue);border-radius:7px;color:var(--blue);font-size:11px;font-weight:700;padding:6px 10px;white-space:nowrap;}
+.artifact-download:hover{background:#eaf0f8;}
+.compact-ppt-window{width:100%;}
+.compact-ppt-workspace{height:410px;grid-template-columns:92px minmax(0,1fr);}
+.compact-ppt-window .ppt-canvas-wrap{padding:12px;}
+.compact-ppt-window .ppt-ribbon span{padding-left:5px;padding-right:5px;}
+.ppt-fallback-slide{width:min(100%,760px);min-height:300px;background:#fff;padding:28px;box-shadow:0 3px 13px rgba(0,0,0,.2);overflow:auto;color:#1a1a1a;}
+.fallback-text-block{font-size:13px;line-height:1.45;margin-bottom:14px;white-space:normal;}
+.fallback-text-block:first-child{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--blue);}
+.fallback-table-wrap{overflow:auto;margin:12px 0;}
+.fallback-table-wrap table{border-collapse:collapse;width:100%;font-size:11px;}
+.fallback-table-wrap th,.fallback-table-wrap td{border:1px solid #d7deea;padding:5px 7px;text-align:left;}
+.fallback-table-wrap th{background:var(--blue);color:#fff;font-weight:700;}
+.fallback-chart-label{font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;}
+.fallback-empty{display:grid;place-items:center;min-height:250px;color:var(--ink-soft);font-size:13px;}
+.fallback-thumb{display:grid;place-items:center;width:100%;aspect-ratio:16/9;background:#fff;border:1px solid #c8ccd3;font-size:9px;color:#667085;}
+
+.excel-window{border:1px solid #aeb6c2;border-radius:8px;overflow:hidden;background:#fff;box-shadow:0 5px 18px rgba(24,31,45,.13);}
+.excel-titlebar{height:56px;display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #d7d7d7;background:#fff;gap:10px;}
+.office-file-ident{display:flex;align-items:center;gap:9px;min-width:0;}
+.office-file-ident div{display:flex;flex-direction:column;min-width:0;}
+.office-file-ident strong{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px;}
+.office-file-ident span{font-size:10.5px;color:#6b7280;}
+.excel-app-icon{width:34px;height:34px;border-radius:4px;background:#217346;color:#fff;display:grid;place-items:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;box-shadow:inset -5px 0 rgba(0,0,0,.09);}
+.workbook-state{border-radius:999px;padding:4px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;background:#dff3ec;color:#0d6d56;white-space:nowrap;}
+.excel-ribbon{height:35px;background:#fff;border-bottom:1px solid #c8c8c8;display:flex;align-items:flex-end;gap:1px;padding:0 8px;overflow:hidden;}
+.excel-ribbon span{font-size:10px;padding:8px 7px 6px;color:#4b5563;white-space:nowrap;border-bottom:2px solid transparent;}
+.excel-ribbon span.active{color:#146c43;font-weight:700;border-bottom-color:#217346;}
+.sheet-host{height:410px;background:#f7f7f7;overflow:hidden;}
+.sheet-loading,.sheet-error{height:100%;display:grid;place-items:center;color:var(--ink-soft);font-size:13px;}
+.sheet-scroll{width:100%;height:100%;overflow:auto;background:#fff;}
+.sheet-table{border-collapse:separate;border-spacing:0;min-width:100%;font-family:Arial,sans-serif;font-size:11px;color:#1f2937;}
+.sheet-table th,.sheet-table td{height:25px;min-width:82px;border-right:1px solid #d9dde5;border-bottom:1px solid #d9dde5;padding:4px 7px;white-space:pre;vertical-align:middle;background-clip:padding-box;}
+.sheet-table td{background:#fff;}
+.sheet-table thead th{position:sticky;top:0;z-index:3;background:#f0f1f3;text-align:center;color:#4b5563;font-weight:600;min-width:82px;}
+.sheet-table .sheet-corner{left:0;z-index:5;min-width:42px;width:42px;}
+.sheet-table .sheet-row-head{position:sticky;left:0;z-index:2;background:#f0f1f3;text-align:center;color:#4b5563;font-weight:600;min-width:42px;width:42px;}
+.sheet-table td.has-comment{position:relative;}
+.sheet-table td.has-comment::after{content:"";position:absolute;right:0;top:0;border-top:7px solid #c0392b;border-left:7px solid transparent;}
+.excel-statusbar{min-height:42px;background:#fff;border-top:1px solid #c7c7c7;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 8px;}
+.sheet-tabs{display:flex;gap:3px;overflow-x:auto;min-width:0;}
+.sheet-tabs button{border:0;border-bottom:3px solid transparent;background:#f4f4f4;color:#4b5563;padding:6px 12px;font-size:10.5px;white-space:nowrap;cursor:pointer;}
+.sheet-tabs button.active{background:#fff;border-bottom-color:#217346;color:#146c43;font-weight:700;}
+.sheet-page-controls{display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:10px;color:#667085;}
+.sheet-page-controls button{width:25px;height:25px;border:1px solid #cfd6e2;background:#fff;border-radius:4px;cursor:pointer;color:#344054;}
+.sheet-page-controls button:disabled{opacity:.4;cursor:not-allowed;}
+.artifact-text{grid-column:1/-1;}
+.text-file-window{border:1px solid #aeb6c2;border-radius:8px;overflow:hidden;background:#fff;box-shadow:0 5px 18px rgba(24,31,45,.1);}
+.text-file-titlebar{height:50px;display:flex;align-items:center;gap:9px;padding:8px 12px;border-bottom:1px solid #d7d7d7;font-size:12.5px;}
+.text-app-icon{width:32px;height:32px;border-radius:4px;background:#5d6573;color:#fff;display:grid;place-items:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;}
+.text-file-window pre{margin:0;padding:22px;max-height:430px;overflow:auto;white-space:pre-wrap;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.65;background:#fbfbfc;color:#172033;}
+@media (max-width:1050px){.artifact-grid{grid-template-columns:1fr;}.artifact-text{grid-column:auto;}}
+@media (max-width:650px){.artifact-card{padding:9px}.compact-ppt-workspace{height:360px;grid-template-columns:72px minmax(0,1fr)}.sheet-host{height:360px}.excel-ribbon span:nth-child(n+5),.compact-ppt-window .ppt-ribbon span:nth-child(n+5){display:none}.artifact-card-heading{align-items:flex-start}.preview-section-heading{align-items:flex-start;flex-direction:column}}
+.compact-ppt-window .ppt-canvas{max-width:100%;max-height:100%;width:auto;height:auto;}
+.sheet-nav-groups{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;}
+.sheet-nav-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#667085;}
+@media (max-width:650px){.excel-statusbar{align-items:flex-start;flex-direction:column}.sheet-nav-groups{width:100%;justify-content:space-between}.sheet-tabs{width:100%}}

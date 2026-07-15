@@ -29,7 +29,7 @@ import tempfile
 import threading
 from collections import defaultdict, Counter
 
-from flask import Flask, request, render_template, send_file, redirect, url_for, flash, abort
+from flask import Flask, request, render_template, send_file, redirect, url_for, flash, abort, jsonify
 from openpyxl import load_workbook
 from openpyxl.utils import column_index_from_string, get_column_letter
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -568,45 +568,13 @@ def build_annotated_xlsx(input_path, issues, out_path):
 
 
 # ---------------------------------------------------------------------------
-# REAL SLIDE PREVIEW (LibreOffice + PyMuPDF)
+# GENERATED FILE PREVIEWS
 # ---------------------------------------------------------------------------
 
-SOFFICE_PATH = shutil.which("soffice") or shutil.which("libreoffice")
-_soffice_lock = threading.Lock()
-try:
-    import fitz
-    HAVE_FITZ = True
-except ImportError:
-    HAVE_FITZ = False
-
-
-def render_pptx_preview(pptx_path, out_png_path):
-    if not (SOFFICE_PATH and HAVE_FITZ):
-        return False
-    out_dir = os.path.dirname(out_png_path)
-    profile_dir = tempfile.mkdtemp(prefix="lo_profile_")
-    try:
-        with _soffice_lock:
-            result = subprocess.run(
-                [SOFFICE_PATH, "--headless", "--norestore",
-                 f"-env:UserInstallation=file://{profile_dir}",
-                 "--convert-to", "pdf", "--outdir", out_dir, pptx_path],
-                capture_output=True, timeout=90,
-            )
-        pdf_path = os.path.join(out_dir, os.path.splitext(os.path.basename(pptx_path))[0] + ".pdf")
-        if result.returncode != 0 or not os.path.exists(pdf_path):
-            return False
-        doc = fitz.open(pdf_path)
-        page = doc[0]
-        pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
-        pix.save(out_png_path)
-        doc.close()
-        os.remove(pdf_path)
-        return True
-    except Exception:
-        return False
-    finally:
-        shutil.rmtree(profile_dir, ignore_errors=True)
+from preview_helpers import (
+    SOFFICE_PATH, POWERSHELL_PATH, HAVE_FITZ, render_pptx_to_images,
+    presentation_text_manifest, workbook_manifest, workbook_page,
+)
 
 
 def _session_dir(sid):
@@ -696,11 +664,15 @@ def generate(sid):
     build_report_pptx(issues, stats, config["title"], config["subtitle"], config["filename"], report_path)
     build_annotated_xlsx(model_path, issues, annotated_path)
 
-    preview_path = os.path.join(sess_dir, "preview.png")
-    rendering_ok = render_pptx_preview(report_path, preview_path)
+    render_dir = os.path.join(sess_dir, "render")
+    shutil.rmtree(render_dir, ignore_errors=True)
+    images, render_engine = render_pptx_to_images(report_path, render_dir, "report")
 
     with open(os.path.join(sess_dir, "meta.json"), "w") as f:
-        json.dump({"rendering_ok": rendering_ok}, f)
+        json.dump({
+            "rendering_ok": images is not None, "slide_count": len(images) if images else 0,
+            "render_engine": render_engine,
+        }, f)
     return redirect(url_for("result", sid=sid))
 
 
@@ -714,22 +686,53 @@ def result(sid):
     with open(os.path.join(sess_dir, "stats.json")) as f:
         stats = json.load(f)
     meta_path = os.path.join(sess_dir, "meta.json")
-    rendering_ok = False
+    meta = {}
     if os.path.exists(meta_path):
         with open(meta_path) as f:
-            rendering_ok = json.load(f).get("rendering_ok", False)
+            meta = json.load(f)
     grade = health_grade(stats["health_score"])
-    return render_template("result.html", sid=sid, stats=stats, grade=grade, rendering_ok=rendering_ok,
-                            soffice_missing=not (SOFFICE_PATH and HAVE_FITZ))
+    preview_presentations = [{
+        "id": "report", "title": "Model health report", "filename": "model_health_report.pptx",
+        "download_url": url_for("download", sid=sid, which="report"),
+        "rendering_ok": meta.get("rendering_ok", False),
+        "slide_count": meta.get("slide_count", 0), "render_engine": meta.get("render_engine"),
+        "image_url": f"/preview_image/{sid}/__SLIDE__",
+        "fallback_slides": presentation_text_manifest(report_path),
+    }]
+    workbook_path = os.path.join(sess_dir, "annotated_model.xlsx")
+    preview_workbooks = [{
+        "id": "annotated", "title": "Annotated model", "filename": "annotated_model.xlsx",
+        "download_url": url_for("download", sid=sid, which="annotated"),
+        "preview_url": f"/workbook_preview/{sid}",
+        "manifest": workbook_manifest(workbook_path),
+    }]
+    return render_template(
+        "result.html", sid=sid, stats=stats, grade=grade,
+        preview_presentations=preview_presentations, preview_workbooks=preview_workbooks,
+        preview_texts=[],
+    )
 
 
-@app.route("/preview_image/<sid>", methods=["GET"])
-def preview_image(sid):
-    sess_dir = _session_dir(sid)
-    path = os.path.join(sess_dir, "preview.png")
+@app.route("/preview_image/<sid>/<int:n>", methods=["GET"])
+def preview_image(sid, n):
+    path = os.path.join(_session_dir(sid), "render", f"report_{n}.png")
     if not os.path.exists(path):
         abort(404)
     return send_file(path, mimetype="image/png")
+
+
+@app.route("/workbook_preview/<sid>", methods=["GET"])
+def workbook_preview(sid):
+    path = os.path.join(_session_dir(sid), "annotated_model.xlsx")
+    if not os.path.exists(path):
+        abort(404)
+    try:
+        sheet = int(request.args.get("sheet", 0))
+        page = int(request.args.get("page", 1))
+        column_page = int(request.args.get("column_page", 1))
+        return jsonify(workbook_page(path, sheet_index=sheet, page=page, column_page=column_page))
+    except (ValueError, IndexError):
+        abort(404)
 
 
 @app.route("/download/<sid>/<which>", methods=["GET"])
