@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Result | KPMG Deck Refresh</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+{% if not rendering_ok %}<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>{% endif %}
+</head>
+<body class="result-page">
+<div class="topbar"><div class="topbar-inner"><span class="product-logo">KPMG</span><span class="brand-name">Deck Refresh</span><span class="tag">Internal demo | fictional data</span></div></div>
+<div class="wrap viewer-wrap">
+  <div class="result-heading">
+    <div>
+      <h1>{{ applied_count }} number{{ 's' if applied_count != 1 else '' }} updated.</h1>
+      <p class="sub">
+        {% if rendering_ok %}
+          Two synchronized PowerPoint viewers. Use either deck's controls, a thumbnail, your arrow keys, or the shared controls to move both presentations together.
+        {% else %}
+          Compare the original and updated {{ 'presentation' if file_type == 'pptx' else 'spreadsheet' }} below.
+          {% if soffice_missing %}Install Microsoft PowerPoint or LibreOffice to enable the full synchronized slide viewers.{% endif %}
+        {% endif %}
+      </p>
+    </div>
+    <div class="actions result-actions">
+      <a class="btn" href="/download/{{ sid }}/updated">Download updated</a>
+      <a class="btn secondary" href="/download/{{ sid }}/original">Download original</a>
+      <a class="btn secondary" href="/">Start over</a>
+    </div>
+  </div>
+
+  {% if rendering_ok %}
+  <section class="sync-control-bar" aria-label="Synchronized presentation controls">
+    <button type="button" class="sync-icon-btn" id="shared-prev" aria-label="Previous slide">&#10094;</button>
+    <div class="sync-position">
+      <span class="sync-dot"></span>
+      <strong>Synchronized</strong>
+      <span id="shared-counter">Slide 1 of {{ slide_count }}</span>
+    </div>
+    <button type="button" class="sync-icon-btn" id="shared-next" aria-label="Next slide">&#10095;</button>
+    <div class="zoom-controls shared-zoom-controls" aria-label="Synchronized zoom controls">
+      <button type="button" class="zoom-btn zoom-out" aria-label="Zoom out">&#8722;</button>
+      <input class="zoom-slider" id="shared-zoom-slider" type="range" min="70" max="200" step="10" value="100" aria-label="Zoom level">
+      <button type="button" class="zoom-btn zoom-in" aria-label="Zoom in">+</button>
+      <button type="button" class="zoom-fit" id="zoom-fit" aria-label="Fit slides to window">Fit</button>
+      <span class="zoom-label" id="shared-zoom-label">100%</span>
+    </div>
+    <div class="slide-jump" id="slide-jump" aria-label="Choose slide"></div>
+  </section>
+
+  <div class="powerpoint-pair">
+    <section class="ppt-window" data-viewer="original" aria-label="Original PowerPoint viewer">
+      <header class="ppt-titlebar">
+        <div class="ppt-file-ident">
+          <span class="ppt-app-icon">P</span>
+          <div>
+            <strong>{{ original_filename }}</strong>
+            <span>Original presentation</span>
+          </div>
+        </div>
+        <span class="deck-state original-state">Original</span>
+      </header>
+      <nav class="ppt-ribbon" aria-label="PowerPoint ribbon preview">
+        <span class="active">Home</span><span>Insert</span><span>Design</span><span>Transitions</span><span>Animations</span><span>Slide Show</span><span>Review</span><span>View</span>
+      </nav>
+      <div class="ppt-workspace">
+        <aside class="ppt-thumbnails" id="original-thumbnails" aria-label="Original slide thumbnails"></aside>
+        <main class="ppt-canvas-wrap">
+          <div class="ppt-slide-stage" id="original-stage">
+            <div class="ppt-canvas-loading" id="original-loading">Loading slide...</div>
+            <img class="ppt-canvas" id="original-main" src="" alt="Original PowerPoint slide">
+          </div>
+        </main>
+      </div>
+      <footer class="ppt-statusbar">
+        <div class="ppt-local-controls">
+          <button type="button" class="ppt-nav-btn viewer-prev" aria-label="Previous slide">&#10094;</button>
+          <span id="original-counter">Slide 1 of {{ slide_count }}</span>
+          <button type="button" class="ppt-nav-btn viewer-next" aria-label="Next slide">&#10095;</button>
+        </div>
+        <div class="ppt-status-right">
+          <span>Rendered by {{ render_engine }}</span>
+          <div class="zoom-controls ppt-zoom-controls">
+            <button type="button" class="zoom-btn zoom-out" aria-label="Zoom out">&#8722;</button>
+            <input class="zoom-slider" type="range" min="70" max="200" step="10" value="100" aria-label="Zoom level">
+            <button type="button" class="zoom-btn zoom-in" aria-label="Zoom in">+</button>
+            <span class="zoom-label">100%</span>
+          </div>
+        </div>
+      </footer>
+    </section>
+
+    <section class="ppt-window updated-window" data-viewer="updated" aria-label="Updated PowerPoint viewer">
+      <header class="ppt-titlebar">
+        <div class="ppt-file-ident">
+          <span class="ppt-app-icon">P</span>
+          <div>
+            <strong>{{ updated_filename }}</strong>
+            <span>Updated presentation</span>
+          </div>
+        </div>
+        <span class="deck-state updated-state">Updated</span>
+      </header>
+      <nav class="ppt-ribbon" aria-label="PowerPoint ribbon preview">
+        <span class="active">Home</span><span>Insert</span><span>Design</span><span>Transitions</span><span>Animations</span><span>Slide Show</span><span>Review</span><span>View</span>
+      </nav>
+      <div class="ppt-workspace">
+        <aside class="ppt-thumbnails" id="updated-thumbnails" aria-label="Updated slide thumbnails"></aside>
+        <main class="ppt-canvas-wrap">
+          <div class="ppt-slide-stage" id="updated-stage">
+            <div class="ppt-canvas-loading" id="updated-loading">Loading slide...</div>
+            <img class="ppt-canvas" id="updated-main" src="" alt="Updated PowerPoint slide">
+          </div>
+        </main>
+      </div>
+      <footer class="ppt-statusbar">
+        <div class="ppt-local-controls">
+          <button type="button" class="ppt-nav-btn viewer-prev" aria-label="Previous slide">&#10094;</button>
+          <span id="updated-counter">Slide 1 of {{ slide_count }}</span>
+          <button type="button" class="ppt-nav-btn viewer-next" aria-label="Next slide">&#10095;</button>
+        </div>
+        <div class="ppt-status-right">
+          <span>Rendered by {{ render_engine }}</span>
+          <div class="zoom-controls ppt-zoom-controls">
+            <button type="button" class="zoom-btn zoom-out" aria-label="Zoom out">&#8722;</button>
+            <input class="zoom-slider" type="range" min="70" max="200" step="10" value="100" aria-label="Zoom level">
+            <button type="button" class="zoom-btn zoom-in" aria-label="Zoom in">+</button>
+            <span class="zoom-label">100%</span>
+          </div>
+        </div>
+      </footer>
+    </section>
+  </div>
+
+  <script>
+    const SID = {{ sid | tojson }};
+    const SLIDE_COUNT = {{ slide_count }};
+    let currentSlide = 1;
+    let zoomLevel = 100;
+
+    const mainImages = {
+      original: document.getElementById("original-main"),
+      updated: document.getElementById("updated-main")
+    };
+    const loadingLabels = {
+      original: document.getElementById("original-loading"),
+      updated: document.getElementById("updated-loading")
+    };
+    const slideStages = {
+      original: document.getElementById("original-stage"),
+      updated: document.getElementById("updated-stage")
+    };
+
+    function slideUrl(which, slideNumber) {
+      return `/slide_image/${SID}/${which}/${slideNumber}`;
+    }
+
+    function makeThumbnail(which, slideNumber) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "ppt-thumb";
+      button.dataset.slide = String(slideNumber);
+      button.setAttribute("aria-label", `Open slide ${slideNumber}`);
+      button.onclick = () => goToSlide(slideNumber);
+
+      const number = document.createElement("span");
+      number.className = "ppt-thumb-number";
+      number.textContent = slideNumber;
+
+      const image = document.createElement("img");
+      image.src = slideUrl(which, slideNumber);
+      image.alt = `${which} slide ${slideNumber}`;
+      image.loading = slideNumber <= 4 ? "eager" : "lazy";
+
+      button.appendChild(number);
+      button.appendChild(image);
+      return button;
+    }
+
+    function buildViewer(which) {
+      const rail = document.getElementById(`${which}-thumbnails`);
+      for (let i = 1; i <= SLIDE_COUNT; i++) {
+        rail.appendChild(makeThumbnail(which, i));
+      }
+    }
+
+    function buildJumpButtons() {
+      const jump = document.getElementById("slide-jump");
+      for (let i = 1; i <= SLIDE_COUNT; i++) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "jump-btn";
+        button.textContent = i;
+        button.dataset.slide = String(i);
+        button.onclick = () => goToSlide(i);
+        jump.appendChild(button);
+      }
+    }
+
+    function updateActiveControls() {
+      document.querySelectorAll(".ppt-thumb").forEach((button) => {
+        const active = Number(button.dataset.slide) === currentSlide;
+        button.classList.toggle("active", active);
+        if (active) button.scrollIntoView({ block: "nearest", inline: "nearest" });
+      });
+      document.querySelectorAll(".jump-btn").forEach((button) => {
+        button.classList.toggle("active", Number(button.dataset.slide) === currentSlide);
+      });
+      const label = `Slide ${currentSlide} of ${SLIDE_COUNT}`;
+      document.getElementById("shared-counter").textContent = label;
+      document.getElementById("original-counter").textContent = label;
+      document.getElementById("updated-counter").textContent = label;
+    }
+
+    function fitDimensions(which) {
+      const image = mainImages[which];
+      const wrap = image.closest(".ppt-canvas-wrap");
+      const styles = getComputedStyle(wrap);
+      const availableWidth = Math.max(180, wrap.clientWidth - parseFloat(styles.paddingLeft) - parseFloat(styles.paddingRight));
+      const availableHeight = Math.max(100, wrap.clientHeight - parseFloat(styles.paddingTop) - parseFloat(styles.paddingBottom));
+      const naturalWidth = image.naturalWidth || 1600;
+      const naturalHeight = image.naturalHeight || 900;
+      const fitScale = Math.min(availableWidth / naturalWidth, availableHeight / naturalHeight);
+      image.dataset.fitWidth = String(naturalWidth * fitScale);
+      image.dataset.fitHeight = String(naturalHeight * fitScale);
+      image.dataset.availableWidth = String(availableWidth);
+      image.dataset.availableHeight = String(availableHeight);
+    }
+
+    function applyZoomToViewer(which, keepCenter = true) {
+      const image = mainImages[which];
+      const stage = slideStages[which];
+      const wrap = image.closest(".ppt-canvas-wrap");
+      if (!image.dataset.fitWidth) fitDimensions(which);
+      const fitWidth = Number(image.dataset.fitWidth || 0);
+      const fitHeight = Number(image.dataset.fitHeight || 0);
+      const availableWidth = Number(image.dataset.availableWidth || wrap.clientWidth);
+      const availableHeight = Number(image.dataset.availableHeight || wrap.clientHeight);
+      const scaledWidth = fitWidth * zoomLevel / 100;
+      const scaledHeight = fitHeight * zoomLevel / 100;
+      image.style.width = `${scaledWidth}px`;
+      image.style.height = `${scaledHeight}px`;
+      stage.style.width = `${Math.max(availableWidth, scaledWidth)}px`;
+      stage.style.height = `${Math.max(availableHeight, scaledHeight)}px`;
+      if (keepCenter) {
+        requestAnimationFrame(() => {
+          wrap.scrollLeft = Math.max(0, (wrap.scrollWidth - wrap.clientWidth) / 2);
+          wrap.scrollTop = Math.max(0, (wrap.scrollHeight - wrap.clientHeight) / 2);
+        });
+      }
+    }
+
+    function syncZoomControls() {
+      document.querySelectorAll(".zoom-slider").forEach((slider) => slider.value = String(zoomLevel));
+      document.querySelectorAll(".zoom-label").forEach((label) => label.textContent = `${zoomLevel}%`);
+    }
+
+    function setZoom(value) {
+      zoomLevel = Math.max(70, Math.min(200, Math.round(value / 10) * 10));
+      applyZoomToViewer("original");
+      applyZoomToViewer("updated");
+      syncZoomControls();
+    }
+
+    function loadMainImage(which) {
+      const image = mainImages[which];
+      const loading = loadingLabels[which];
+      loading.hidden = false;
+      image.classList.add("is-loading");
+      image.onload = () => {
+        loading.hidden = true;
+        image.classList.remove("is-loading");
+        fitDimensions(which);
+        applyZoomToViewer(which);
+      };
+      image.src = slideUrl(which, currentSlide);
+    }
+
+    function goToSlide(slideNumber) {
+      currentSlide = Math.max(1, Math.min(SLIDE_COUNT, slideNumber));
+      loadMainImage("original");
+      loadMainImage("updated");
+      updateActiveControls();
+    }
+
+    function previousSlide() { goToSlide(currentSlide - 1); }
+    function nextSlide() { goToSlide(currentSlide + 1); }
+
+    document.getElementById("shared-prev").onclick = previousSlide;
+    document.getElementById("shared-next").onclick = nextSlide;
+    document.querySelectorAll(".viewer-prev").forEach((button) => button.onclick = previousSlide);
+    document.querySelectorAll(".viewer-next").forEach((button) => button.onclick = nextSlide);
+    document.querySelectorAll(".zoom-out").forEach((button) => button.onclick = () => setZoom(zoomLevel - 10));
+    document.querySelectorAll(".zoom-in").forEach((button) => button.onclick = () => setZoom(zoomLevel + 10));
+    document.querySelectorAll(".zoom-slider").forEach((slider) => slider.oninput = () => setZoom(Number(slider.value)));
+    document.getElementById("zoom-fit").onclick = () => setZoom(100);
+    document.addEventListener("keydown", (event) => {
+      if (event.ctrlKey || event.metaKey) {
+        if (event.key === "+" || event.key === "=") { event.preventDefault(); setZoom(zoomLevel + 10); return; }
+        if (event.key === "-") { event.preventDefault(); setZoom(zoomLevel - 10); return; }
+        if (event.key === "0") { event.preventDefault(); setZoom(100); return; }
+      }
+      if (event.key === "ArrowLeft" || event.key === "PageUp") previousSlide();
+      if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") nextSlide();
+    });
+    window.addEventListener("resize", () => {
+      fitDimensions("original");
+      fitDimensions("updated");
+      applyZoomToViewer("original", false);
+      applyZoomToViewer("updated", false);
+    });
+
+    buildViewer("original");
+    buildViewer("updated");
+    buildJumpButtons();
+    syncZoomControls();
+    goToSlide(1);
+  </script>
+
+  {% else %}
+  <div id="tab-row" class="tab-row"></div>
+  <div id="tab-panels"></div>
+
+  <script>
+    const TABS = {{ tabs_json | safe }};
+    const PALETTE = ["#00338D", "#0091DA", "#00A393", "#5A288C", "#8A8D8F", "#C0392B", "#E8A33D"];
+
+    function renderTable(container, rows) {
+      if (!rows || !rows.length) return;
+      const table = document.createElement("table");
+      table.className = "mini-table";
+      rows.forEach(r => {
+        const tr = document.createElement("tr");
+        r.forEach(cellVal => {
+          const td = document.createElement("td");
+          td.textContent = (cellVal === null || cellVal === undefined) ? "" : cellVal;
+          tr.appendChild(td);
+        });
+        table.appendChild(tr);
+      });
+      container.appendChild(table);
+    }
+
+    function renderChart(container, chart, idSuffix) {
+      if (!chart) return;
+      const wrap = document.createElement("div");
+      wrap.className = "chart-wrap";
+      const canvas = document.createElement("canvas");
+      canvas.id = "chart-" + idSuffix;
+      canvas.style.maxHeight = "260px";
+      wrap.appendChild(canvas);
+      container.appendChild(wrap);
+
+      const series = chart.series[0] || {values: [], name: ""};
+      const colors = (series.colors && series.colors.some(c => c)) ? series.colors.map((c,i) => c || PALETTE[i % PALETTE.length])
+                                                                     : chart.categories.map((_, i) => PALETTE[i % PALETTE.length]);
+      new Chart(canvas.getContext("2d"), {
+        type: chart.type === "pie" ? "pie" : (chart.type === "line" ? "line" : "bar"),
+        data: {
+          labels: chart.categories,
+          datasets: [{
+            label: series.name,
+            data: series.values,
+            backgroundColor: colors,
+            borderColor: chart.type === "line" ? "#00338D" : colors,
+            borderWidth: chart.type === "line" ? 2 : 1,
+            fill: false
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: chart.type === "pie", position: "bottom", labels: { font: { size: 11 } } } },
+          scales: chart.type === "pie" ? {} : { y: { beginAtZero: true } }
+        }
+      });
+    }
+
+    function buildPanel(tab, index) {
+      const panel = document.createElement("div");
+      panel.className = "tab-panel" + (index === 0 ? " active" : "");
+      panel.id = "panel-" + index;
+      const grid = document.createElement("div");
+      grid.className = "compare-grid";
+      const oldCol = document.createElement("div");
+      oldCol.className = "compare-col old";
+      oldCol.innerHTML = "<h3>Original</h3>";
+      (tab.old.tables || []).forEach(rows => renderTable(oldCol, rows));
+      const newCol = document.createElement("div");
+      newCol.className = "compare-col new";
+      newCol.innerHTML = "<h3>Updated</h3>";
+      (tab.new.tables || []).forEach(rows => renderTable(newCol, rows));
+      grid.appendChild(oldCol);
+      grid.appendChild(newCol);
+      panel.appendChild(grid);
+      if ((tab.old.charts && tab.old.charts.length) || (tab.new.charts && tab.new.charts.length)) {
+        const chartGrid = document.createElement("div");
+        chartGrid.className = "compare-grid";
+        const oldChartCol = document.createElement("div");
+        oldChartCol.className = "compare-col old";
+        (tab.old.charts || []).forEach((c, ci) => renderChart(oldChartCol, c, index + "-old-" + ci));
+        const newChartCol = document.createElement("div");
+        newChartCol.className = "compare-col new";
+        (tab.new.charts || []).forEach((c, ci) => renderChart(newChartCol, c, index + "-new-" + ci));
+        chartGrid.appendChild(oldChartCol);
+        chartGrid.appendChild(newChartCol);
+        panel.appendChild(chartGrid);
+      }
+      return panel;
+    }
+
+    const tabRow = document.getElementById("tab-row");
+    const tabPanels = document.getElementById("tab-panels");
+    TABS.forEach((tab, i) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "tab-btn" + (i === 0 ? " active" : "");
+      btn.textContent = tab.label;
+      btn.onclick = () => {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("panel-" + i).classList.add("active");
+      };
+      tabRow.appendChild(btn);
+      tabPanels.appendChild(buildPanel(tab, i));
+    });
+  </script>
+  {% endif %}
+</div>
+</body>
+</html>

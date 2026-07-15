@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KPMG Deck Refresh</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner"><span class="product-logo">KPMG</span><span class="brand-name">Deck Refresh</span><span class="tag">Internal demo | fictional data</span></div></div>
+<div class="wrap">
+  <h1>Update the numbers, keep the presentation.</h1>
+  <p class="sub">Upload a PowerPoint or Excel file and new data. Matching numbers update in place while fonts, layouts, colors, tables, and charts stay intact. Uncertain matches stay unchanged.</p>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form action="/process" method="post" enctype="multipart/form-data">
+    <div class="card">
+      <h2>1. File to update</h2>
+      <p class="hint">Choose a .pptx or .xlsx file.</p>
+      <input type="file" name="primary_file" accept=".pptx,.xlsx,.xls" required>
+    </div>
+
+    <div class="card">
+      <h2>2. New data</h2>
+      <p class="hint">Upload an Excel, CSV, or PowerPoint source, paste values below, or use both.</p>
+      <label class="field-label">Spreadsheet or PowerPoint</label>
+      <input type="file" name="data_file" accept=".xlsx,.xls,.csv,.pptx">
+
+      <div class="or-divider">and / or</div>
+
+      <label class="field-label">Type or paste values</label>
+      <textarea name="pasted_text" placeholder="Advisory Revenue: 522.8M&#10;Contribution Margin: 24.6%&#10;Active Engagements: 1,286"></textarea>
+    </div>
+
+    <div class="actions">
+      <button class="btn" type="submit">Find matching numbers →</button>
+    </div>
+  </form>
+
+  <footer class="note">KPMG internal demonstration. Sample information is fictional. Files stay on this computer for the current session.</footer>
+</div>
+</body>
+</html>

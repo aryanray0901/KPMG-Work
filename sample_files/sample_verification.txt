@@ -1,0 +1,10 @@
+KPMG Deck Refresh fictional sample verification: PASS
+Slides checked: 9
+Numeric targets checked: 120
+Matched targets: 120
+Unmatched targets: 0
+Period update checked: Q3 to Q4
+Slide and shape structure preserved: yes
+Table values checked: yes
+Chart values checked: yes
+Expected updated file: kpmg_advisory_q4_expected.pptx

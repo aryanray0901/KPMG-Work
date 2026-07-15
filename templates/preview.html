@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review | KPMG Deck Refresh</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner"><span class="product-logo">KPMG</span><span class="brand-name">Deck Refresh</span><span class="tag">Internal demo | fictional data</span></div></div>
+<div class="wrap">
+  <h1>Review matched presentation data.</h1>
+  <p class="sub">{{ matched|length }} number{{ 's' if matched|length != 1 else '' }} matched your new data,
+  out of {{ (matched|length) + (unmatched|length) }} numeric spots checked in this {{ 'presentation' if file_type=='pptx' else 'spreadsheet' }}.</p>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="stat-row">
+    <div class="stat"><b>{{ matched|length }}</b>matched</div>
+    <div class="stat"><b>{{ unmatched|length }}</b>unmatched</div>
+    <div class="stat"><b>{{ source_count }}</b>data points</div>
+  </div>
+
+  {% if period_replacements %}
+  <div class="card">
+    <h2>Headings will also update</h2>
+    <p class="hint">Detected from your new data and applied automatically throughout.</p>
+    {% for old, new in period_replacements.items() %}
+    <div class="heading-item"><span class="old">{{ old }}</span><span>→</span><span class="new">{{ new }}</span></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <form action="/apply/{{ sid }}" method="post">
+    <div class="card">
+      <h2>Matched numbers</h2>
+      <p class="hint">Checked items will be updated. Edit any value directly if needed.</p>
+      {% if matched %}
+        {% for m in matched %}
+        <div class="match-item">
+          <input type="checkbox" name="apply_{{ m.id }}" checked>
+          <div class="match-meta">
+            <div class="ctx">{{ m.context }}</div>
+            <div class="lbl">{{ m.label if m.label else '(unlabeled)' }}
+              <span class="score-badge">matched "{{ m.matched_label }}" · {{ m.score }}%</span>
+            </div>
+            <div class="arrow-row">
+              <span class="old-val">{{ m.original }}</span>
+              <span>→</span>
+              <input class="new-val-input" name="value_{{ m.id }}" value="{{ m.new_text_preview }}">
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="hint">No confident matches found. Try adjusting your data labels to more closely resemble the file's wording.</p>
+      {% endif %}
+    </div>
+
+    <div class="actions">
+      <button class="btn" type="submit" {{ 'disabled' if not matched }}>Apply & continue →</button>
+      <a class="btn secondary" href="/">Start over</a>
+    </div>
+  </form>
+
+  {% if unmatched %}
+  <div class="card">
+    <details>
+      <summary>{{ unmatched|length }} numeric spots with no confident match (left unchanged)</summary>
+      {% for u in unmatched %}
+      <div class="unmatched-item">
+        <span>{{ u.context }} — {{ u.label if u.label else '(unlabeled)' }}</span>
+        <span>{{ u.original }}</span>
+      </div>
+      {% endfor %}
+    </details>
+  </div>
+  {% endif %}
+</div>
+</body>
+</html>
