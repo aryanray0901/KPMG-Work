@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Math Drill — Case Prep</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="navbar"><div class="navbar-inner">
+  <span class="logo">Case Prep</span>
+  <nav>
+    <a href="/cases">Cases</a>
+    <a href="/frameworks">Frameworks</a>
+    <a href="/fit">Fit Questions</a>
+    <a href="/market-sizing">Market Sizing</a>
+    <a href="/math-drill" class="active">Math Drill</a>
+    <a href="/firms">Firm Guides</a>
+  </nav>
+</div></div>
+<div class="wrap">
+  <h1>Math Drill</h1>
+  <p class="sub">Percentages, growth rates, and weighted averages, the mental math that comes up constantly mid-case.
+  Answers within a small rounding tolerance are accepted, case math rewards being close and fast, not decimal precision.</p>
+
+  <div class="math-stats">
+    <div>Score: <b id="score">0</b> / <span id="attempted">0</span></div>
+    <div>Streak: <b id="streak">0</b></div>
+  </div>
+
+  <div class="math-problem">
+    <div class="expr" id="problem-text">Click "Start" to begin</div>
+    <input type="text" id="answer-input" placeholder="Your answer" disabled>
+    <div class="math-feedback" id="feedback"></div>
+  </div>
+
+  <div class="actions" style="justify-content:center;">
+    <button class="btn" id="start-btn" onclick="startDrill()">Start</button>
+    <button class="btn secondary" id="submit-btn" onclick="checkAnswer()" disabled>Submit</button>
+    <button class="btn secondary" id="skip-btn" onclick="nextProblem()" disabled>Skip</button>
+  </div>
+</div>
+
+<script>
+let score = 0, attempted = 0, streak = 0, currentAnswer = 0, tolerance = 0;
+
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function generateProblem() {
+  const type = rand(1, 4);
+  let text, answer, tol;
+  if (type === 1) {
+    // percentage of a number
+    const pct = rand(2, 40) * 5; // multiples of 5, up to 200 for realism
+    const base = rand(2, 50) * 10;
+    text = "What is " + pct + "% of " + base + "?";
+    answer = (pct / 100) * base;
+    tol = Math.max(1, Math.abs(answer) * 0.02);
+  } else if (type === 2) {
+    // percentage change
+    const start = rand(20, 200) * 5;
+    const changePct = rand(-40, 60);
+    const end = Math.round(start * (1 + changePct / 100));
+    text = "A value grows from " + start + " to " + end + ". What's the percent change (to the nearest whole %)?";
+    answer = ((end - start) / start) * 100;
+    tol = 1.5;
+  } else if (type === 3) {
+    // weighted average
+    const a = rand(2, 20) * 10, priceA = rand(5, 40);
+    const b = rand(2, 20) * 10, priceB = rand(5, 40);
+    text = a + " units sold at $" + priceA + " and " + b + " units sold at $" + priceB + ". What's the average price per unit (to the nearest dollar)?";
+    answer = (a * priceA + b * priceB) / (a + b);
+    tol = 1;
+  } else {
+    // quick multiplication (round numbers, case-style estimation)
+    const x = rand(3, 40) * 5;
+    const y = rand(3, 40) * 5;
+    text = "Roughly what is " + x + " x " + y + "? (estimate is fine, within 5%)";
+    answer = x * y;
+    tol = Math.max(2, Math.abs(answer) * 0.05);
+  }
+  return { text, answer, tol };
+}
+
+function startDrill() {
+  score = 0; attempted = 0; streak = 0;
+  document.getElementById("score").textContent = "0";
+  document.getElementById("attempted").textContent = "0";
+  document.getElementById("streak").textContent = "0";
+  document.getElementById("start-btn").textContent = "Restart";
+  document.getElementById("submit-btn").disabled = false;
+  document.getElementById("skip-btn").disabled = false;
+  document.getElementById("answer-input").disabled = false;
+  nextProblem();
+}
+
+function nextProblem() {
+  const p = generateProblem();
+  currentAnswer = p.answer;
+  tolerance = p.tol;
+  document.getElementById("problem-text").textContent = p.text;
+  document.getElementById("answer-input").value = "";
+  document.getElementById("answer-input").focus();
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("feedback").className = "math-feedback";
+}
+
+function checkAnswer() {
+  const input = document.getElementById("answer-input").value.trim();
+  if (!input) return;
+  const userVal = parseFloat(input.replace(/,/g, ""));
+  attempted++;
+  const fb = document.getElementById("feedback");
+  if (!isNaN(userVal) && Math.abs(userVal - currentAnswer) <= tolerance) {
+    score++;
+    streak++;
+    fb.textContent = "Correct! (" + currentAnswer.toFixed(1) + ")";
+    fb.className = "math-feedback correct";
+  } else {
+    streak = 0;
+    fb.textContent = "Not quite, answer was " + currentAnswer.toFixed(1);
+    fb.className = "math-feedback incorrect";
+  }
+  document.getElementById("score").textContent = score;
+  document.getElementById("attempted").textContent = attempted;
+  document.getElementById("streak").textContent = streak;
+  setTimeout(nextProblem, 1200);
+}
+
+document.getElementById("answer-input").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") checkAnswer();
+});
+</script>
+</body>
+</html>

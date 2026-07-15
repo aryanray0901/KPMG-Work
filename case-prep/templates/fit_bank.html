@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fit Questions — Case Prep</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="navbar"><div class="navbar-inner">
+  <span class="logo">Case Prep</span>
+  <nav>
+    <a href="/cases">Cases</a>
+    <a href="/frameworks">Frameworks</a>
+    <a href="/fit" class="active">Fit Questions</a>
+    <a href="/market-sizing">Market Sizing</a>
+    <a href="/math-drill">Math Drill</a>
+    <a href="/firms">Firm Guides</a>
+  </nav>
+</div></div>
+<div class="wrap">
+  <h1>Fit &amp; Behavioral Questions</h1>
+  <p class="sub">Organized by category. Click a question to draft an answer and get feedback, structured with the STAR
+  method (Situation, Task, Action, Result) in mind.</p>
+
+  {% set gi = namespace(n=0) %}
+  {% for cat in categories %}
+  <div class="card">
+    <h2>{{ cat.category }}</h2>
+    {% for item in cat.questions %}
+    {% set gi.n = gi.n + 1 %}
+    <div class="qa-item">
+      <div class="q" style="cursor:pointer;" onclick="toggle({{ gi.n }})">{{ item.q }}</div>
+      <div class="guidance">{{ item.guidance }}</div>
+      <div id="practice-{{ gi.n }}" style="display:none;">
+        <textarea id="answer-{{ gi.n }}" placeholder="Draft your answer here..."></textarea>
+        <div class="provider-row" style="display:flex;gap:10px;margin:10px 0;">
+          <select id="provider-{{ gi.n }}" style="flex:1;">
+            <option value="">No AI, use self-assessment</option>
+            <option value="anthropic">Anthropic (Claude)</option>
+            <option value="openai">OpenAI (GPT)</option>
+          </select>
+          <input type="password" id="key-{{ gi.n }}" placeholder="API key (optional)" style="flex:1;">
+        </div>
+        <button class="btn secondary" onclick="getFeedback({{ gi.n }}, {{ item.q | tojson }})">Get feedback</button>
+        <div id="result-{{ gi.n }}"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+function toggle(n) {
+  const el = document.getElementById("practice-" + n);
+  el.style.display = el.style.display === "none" ? "block" : "none";
+}
+
+async function getFeedback(n, question) {
+  const text = document.getElementById("answer-" + n).value.trim();
+  const provider = document.getElementById("provider-" + n).value;
+  const apiKey = document.getElementById("key-" + n).value.trim();
+  const resultDiv = document.getElementById("result-" + n);
+  if (!text) {
+    resultDiv.innerHTML = '<div class="flash">Write an answer first.</div>';
+    return;
+  }
+  resultDiv.innerHTML = '<p class="hint">Getting feedback...</p>';
+  try {
+    const resp = await fetch("/api/fit-feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: text, question: question, provider: provider, api_key: apiKey }),
+    });
+    const data = await resp.json();
+    if (data.error) {
+      resultDiv.innerHTML = '<div class="flash">' + data.error + '</div>';
+    } else {
+      const modeLabel = data.mode === "ai" ? "AI Coach feedback" : "Structured self-assessment";
+      let html = '<div class="feedback-box mode-' + data.mode + '"><strong>' + modeLabel + '</strong><br><br>' + data.feedback + '</div>';
+      if (data.note) html += '<div class="feedback-note">' + data.note + '</div>';
+      resultDiv.innerHTML = html;
+    }
+  } catch (e) {
+    resultDiv.innerHTML = '<div class="flash">Something went wrong. Try again.</div>';
+  }
+}
+</script>
+</body>
+</html>

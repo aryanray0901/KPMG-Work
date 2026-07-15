@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ firm.name }} — Case Prep</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="navbar"><div class="navbar-inner">
+  <span class="logo">Case Prep</span>
+  <nav>
+    <a href="/cases">Cases</a>
+    <a href="/frameworks">Frameworks</a>
+    <a href="/fit">Fit Questions</a>
+    <a href="/market-sizing">Market Sizing</a>
+    <a href="/math-drill">Math Drill</a>
+    <a href="/firms" class="active">Firm Guides</a>
+  </nav>
+</div></div>
+<div class="wrap">
+  <p class="sub"><a href="/firms">← Firm Guides</a></p>
+  <h1>{{ firm.name }}</h1>
+  <p class="sub">{{ firm.format }}</p>
+
+  <div class="card">
+    <h2>Overview</h2>
+    <p>{{ firm.summary }}</p>
+  </div>
+
+  <div class="card">
+    <h2>What to expect</h2>
+    <ul>{% for item in firm.what_to_expect %}<li style="margin-bottom:8px;">{{ item }}</li>{% endfor %}</ul>
+  </div>
+
+  <div class="card" style="background:var(--good-bg);border-color:var(--good);">
+    <h2 style="color:var(--good);">Prep tips</h2>
+    <ul>{% for t in firm.tips %}<li style="margin-bottom:8px;">{{ t }}</li>{% endfor %}</ul>
+  </div>
+
+  {% if cases %}
+  <div class="card">
+    <h2>Practice a case in this style</h2>
+    <div class="case-grid">
+      {% for c in cases %}
+      <a class="case-card" href="/cases/{{ c.slug }}">
+        <h3>{{ c.title }}</h3>
+        <p>{{ c.case_type }}</p>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+</body>
+</html>

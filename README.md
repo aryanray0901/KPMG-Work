@@ -34,9 +34,13 @@ Reads an Excel workbook's actual formulas, not just its values, and finds the ki
 
 ![Model health report](model-auditor/screenshots/health-report.png)
 
+## [Case Prep](case-prep/)
+
+A fully in-browser case interview practice platform for consulting interviews. Unlike the other tools here, nothing is downloaded or exported; everything happens on the page. Includes a case library with 9 mock cases modeled after McKinsey, BCG, Bain, Deloitte, PwC, EY, and KPMG interview styles (progressive exhibit reveal, a timer, and model answers to compare against), a framework reference library, a fit/behavioral question bank with STAR guidance, market sizing and mental math drills, and firm-by-firm interview format guides. An optional AI Coach can give feedback using a student's own API key; without one, a rule-based structured self-assessment is used instead, which is a genuinely useful mechanism on its own, not a placeholder.
+
 ## Running any tool
 
-Each folder is a self-contained local Flask application. See the README in each folder for setup instructions. All five:
+Each folder is a self-contained local Flask application. See the README in each folder for setup instructions. All six:
 - Run entirely on the local machine; no data is transmitted externally
 - Include a double-click launcher for Mac and Windows
-- Include fictional sample data for immediate testing
+- Include fictional sample data (or, for Case Prep, built-in practice content) for immediate use

@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ case.title }} — Case Prep</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="navbar"><div class="navbar-inner">
+  <span class="logo">Case Prep</span>
+  <nav>
+    <a href="/cases" class="active">Cases</a>
+    <a href="/frameworks">Frameworks</a>
+    <a href="/fit">Fit Questions</a>
+    <a href="/market-sizing">Market Sizing</a>
+    <a href="/math-drill">Math Drill</a>
+    <a href="/firms">Firm Guides</a>
+  </nav>
+</div></div>
+<div class="wrap">
+  <p class="sub"><a href="/cases">← Case Library</a></p>
+  <div class="badges" style="margin-bottom:10px;">
+    <span class="badge">{{ case.case_type }}</span>
+    <span class="badge difficulty-{{ case.difficulty|lower }}">{{ case.difficulty }}</span>
+    {% if firm %}<span class="badge">Modeled on {{ firm.name }}</span>{% endif %}
+  </div>
+  <h1>{{ case.title }}</h1>
+
+  <div class="timer-widget">
+    <div class="timer-display" id="timer-display">00:00</div>
+    <button class="btn" id="timer-start">Start timer</button>
+    <button class="btn secondary" id="timer-reset">Reset</button>
+    <span class="hint">Most live cases run 20-30 minutes end to end. Time yourself to build the habit.</span>
+  </div>
+
+  <div class="card">
+    <h2>Prompt</h2>
+    <p>{{ case.prompt }}</p>
+    {% if case.clarifying_info %}
+    <details style="margin-top:14px;">
+      <summary style="cursor:pointer;font-weight:600;font-size:13px;color:var(--blue);">Common clarifying questions &amp; answers</summary>
+      <ul style="margin-top:10px;font-size:13.5px;color:var(--ink-soft);">
+        {% for qa in case.clarifying_info %}<li style="margin-bottom:8px;">{{ qa }}</li>{% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Your structure &amp; approach</h2>
+    <p class="hint">Write out how you'd structure this case before revealing any exhibits, exactly like you'd have to in a live interview.</p>
+    <textarea id="structure-text" placeholder="How would you break this problem down? What's your initial hypothesis, if any?"></textarea>
+  </div>
+
+  {% if case.exhibits %}
+  <div class="card">
+    <h2>Exhibits</h2>
+    <p class="hint">Reveal one at a time, the way an interviewer would give you data as you ask for it.</p>
+    <div id="exhibits-container">
+      {% for ex in case.exhibits %}
+      <div class="exhibit-locked" id="locked-{{ loop.index0 }}">
+        <button class="btn secondary" onclick="revealExhibit({{ loop.index0 }})">Reveal Exhibit {{ loop.index }}</button>
+      </div>
+      <div class="exhibit-block" id="exhibit-{{ loop.index0 }}" style="display:none;">
+        <h4>{{ ex.title }}</h4>
+        <pre>{{ ex.content }}</pre>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <h2>Your synthesis</h2>
+    <p class="hint">Wrap up with a recommendation, as if you had 60 seconds to summarize for the client.</p>
+    <textarea id="synthesis-text" placeholder="What's your recommendation and why?"></textarea>
+  </div>
+
+  <div class="ai-panel">
+    <h2>Get feedback</h2>
+    <p class="hint">Optional: paste your own OpenAI or Anthropic API key for AI feedback. Your key is sent directly to
+    the provider for this one request and is never stored. Without a key, you'll get a structured self-assessment instead.</p>
+    <div class="provider-row">
+      <select id="provider-select">
+        <option value="">No AI, use self-assessment</option>
+        <option value="anthropic">Anthropic (Claude)</option>
+        <option value="openai">OpenAI (GPT)</option>
+      </select>
+      <input type="password" id="api-key-input" placeholder="API key (optional)">
+    </div>
+    <button class="btn" id="feedback-btn" onclick="getFeedback()">Get feedback on my answer</button>
+    <div id="feedback-result"></div>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary style="cursor:pointer;font-weight:600;color:var(--blue);">Reveal model approach &amp; synthesis</summary>
+      <div class="model-answer">
+        <h4>Model Approach</h4>
+        <p>{{ case.model_approach }}</p>
+      </div>
+      <div class="model-answer">
+        <h4>Model Synthesis</h4>
+        <p>{{ case.model_synthesis }}</p>
+      </div>
+    </details>
+  </div>
+</div>
+
+<script>
+const CASE_SLUG = {{ case.slug | tojson }};
+
+// --- Timer ---
+let seconds = 0, timerInterval = null;
+function updateDisplay() {
+  const m = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const s = String(seconds % 60).padStart(2, "0");
+  document.getElementById("timer-display").textContent = m + ":" + s;
+}
+document.getElementById("timer-start").onclick = function() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    this.textContent = "Resume";
+  } else {
+    timerInterval = setInterval(() => { seconds++; updateDisplay(); }, 1000);
+    this.textContent = "Pause";
+  }
+};
+document.getElementById("timer-reset").onclick = function() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  seconds = 0;
+  updateDisplay();
+  document.getElementById("timer-start").textContent = "Start timer";
+};
+
+// --- Exhibit reveal ---
+function revealExhibit(i) {
+  document.getElementById("locked-" + i).style.display = "none";
+  document.getElementById("exhibit-" + i).style.display = "block";
+}
+
+// --- AI feedback ---
+async function getFeedback() {
+  const structure = document.getElementById("structure-text").value.trim();
+  const synthesis = document.getElementById("synthesis-text").value.trim();
+  const combined = "My structure/approach:\n" + structure + "\n\nMy synthesis/recommendation:\n" + synthesis;
+  const provider = document.getElementById("provider-select").value;
+  const apiKey = document.getElementById("api-key-input").value.trim();
+  const btn = document.getElementById("feedback-btn");
+  const resultDiv = document.getElementById("feedback-result");
+
+  if (!structure && !synthesis) {
+    resultDiv.innerHTML = '<div class="flash">Write your approach and/or synthesis above first.</div>';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Getting feedback...";
+  resultDiv.innerHTML = "";
+
+  try {
+    const resp = await fetch("/api/case-feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: CASE_SLUG, text: combined, provider: provider, api_key: apiKey }),
+    });
+    const data = await resp.json();
+    if (data.error) {
+      resultDiv.innerHTML = '<div class="flash">' + data.error + '</div>';
+    } else {
+      const modeLabel = data.mode === "ai" ? "AI Coach feedback" : "Structured self-assessment";
+      let html = '<div class="feedback-box mode-' + data.mode + '"><strong>' + modeLabel + '</strong><br><br>' + data.feedback + '</div>';
+      if (data.note) html += '<div class="feedback-note">' + data.note + '</div>';
+      resultDiv.innerHTML = html;
+    }
+  } catch (e) {
+    resultDiv.innerHTML = '<div class="flash">Something went wrong requesting feedback. Try again.</div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Get feedback on my answer";
+  }
+}
+</script>
+</body>
+</html>

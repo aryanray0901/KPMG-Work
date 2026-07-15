@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Case Prep</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="navbar"><div class="navbar-inner">
+  <span class="logo">Case Prep</span>
+  <nav>
+    <a href="/cases">Cases</a>
+    <a href="/frameworks">Frameworks</a>
+    <a href="/fit">Fit Questions</a>
+    <a href="/market-sizing">Market Sizing</a>
+    <a href="/math-drill">Math Drill</a>
+    <a href="/firms">Firm Guides</a>
+  </nav>
+</div></div>
+<div class="wrap">
+  <h1>Practice consulting case interviews.</h1>
+  <p class="sub">Mock cases modeled after McKinsey, BCG, Bain, Deloitte, PwC, EY, and KPMG interview
+  styles, a framework reference library, a fit/behavioral question bank, market sizing and mental
+  math drills, and firm-by-firm interview format guides. Everything runs in the browser, nothing is
+  downloaded.</p>
+
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num">{{ case_count }}</div><div class="lbl">Mock cases</div></div>
+    <div class="hero-stat"><div class="num">{{ firm_count }}</div><div class="lbl">Firm guides</div></div>
+    <div class="hero-stat"><div class="num">{{ framework_count }}</div><div class="lbl">Frameworks</div></div>
+    <div class="hero-stat"><div class="num">{{ fit_count }}</div><div class="lbl">Fit questions</div></div>
+    <div class="hero-stat"><div class="num">{{ sizing_count }}</div><div class="lbl">Sizing drills</div></div>
+  </div>
+
+  <div class="module-grid">
+    <a class="module-card" href="/cases">
+      <div class="icon">📋</div>
+      <h3>Case Library</h3>
+      <p>Full mock cases with progressive exhibit reveal, a timer, and a model approach and synthesis to compare against.</p>
+    </a>
+    <a class="module-card" href="/frameworks">
+      <div class="icon">🧭</div>
+      <h3>Frameworks</h3>
+      <p>Reference cards for profitability, market entry, M&amp;A, pricing, operations, and more, with when to use each.</p>
+    </a>
+    <a class="module-card" href="/fit">
+      <div class="icon">💬</div>
+      <h3>Fit &amp; Behavioral</h3>
+      <p>Common questions by category with STAR guidance and a space to draft and get feedback on your answers.</p>
+    </a>
+    <a class="module-card" href="/market-sizing">
+      <div class="icon">📐</div>
+      <h3>Market Sizing</h3>
+      <p>Guided estimation prompts with a suggested approach and a reasonable range to self-check against.</p>
+    </a>
+    <a class="module-card" href="/math-drill">
+      <div class="icon">⚡</div>
+      <h3>Math Drill</h3>
+      <p>Timed mental math practice: percentages, growth rates, and weighted averages, the kind of arithmetic that comes up mid-case.</p>
+    </a>
+    <a class="module-card" href="/firms">
+      <div class="icon">🏢</div>
+      <h3>Firm Guides</h3>
+      <p>What to expect at each firm's interview process, format, structure, and what interviewers tend to emphasize.</p>
+    </a>
+  </div>
+
+  <footer class="note">Everything runs locally in this browser session. An optional AI Coach can give feedback on
+  your written practice answers using your own OpenAI or Anthropic API key, entered per-session and never stored.
+  Without a key, a structured self-assessment is used instead.</footer>
+</div>
+</body>
+</html>

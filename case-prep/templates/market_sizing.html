@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Market Sizing — Case Prep</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="navbar"><div class="navbar-inner">
+  <span class="logo">Case Prep</span>
+  <nav>
+    <a href="/cases">Cases</a>
+    <a href="/frameworks">Frameworks</a>
+    <a href="/fit">Fit Questions</a>
+    <a href="/market-sizing" class="active">Market Sizing</a>
+    <a href="/math-drill">Math Drill</a>
+    <a href="/firms">Firm Guides</a>
+  </nav>
+</div></div>
+<div class="wrap">
+  <h1>Market Sizing Drill</h1>
+  <p class="sub">Structure matters more than the exact number. State your assumptions explicitly, work through the
+  math out loud, and land on an actual estimate.</p>
+
+  <div class="card">
+    <h2>Prompt {{ idx + 1 }} of {{ total }}</h2>
+    <p>{{ prompt.prompt }}</p>
+  </div>
+
+  <div class="card">
+    <h2>Your estimate &amp; reasoning</h2>
+    <textarea id="sizing-text" placeholder="Walk through your structure and land on a number..."></textarea>
+  </div>
+
+  <div class="ai-panel">
+    <h2>Get feedback</h2>
+    <div class="provider-row">
+      <select id="provider-select">
+        <option value="">No AI, use self-assessment</option>
+        <option value="anthropic">Anthropic (Claude)</option>
+        <option value="openai">OpenAI (GPT)</option>
+      </select>
+      <input type="password" id="api-key-input" placeholder="API key (optional)">
+    </div>
+    <button class="btn" id="feedback-btn" onclick="getFeedback()">Get feedback</button>
+    <div id="feedback-result"></div>
+  </div>
+
+  <div class="actions">
+    <a class="btn secondary" href="/market-sizing">Next prompt →</a>
+  </div>
+</div>
+
+<script>
+const IDX = {{ idx }};
+async function getFeedback() {
+  const text = document.getElementById("sizing-text").value.trim();
+  const provider = document.getElementById("provider-select").value;
+  const apiKey = document.getElementById("api-key-input").value.trim();
+  const btn = document.getElementById("feedback-btn");
+  const resultDiv = document.getElementById("feedback-result");
+  if (!text) {
+    resultDiv.innerHTML = '<div class="flash">Write your estimate and reasoning first.</div>';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = "Getting feedback...";
+  try {
+    const resp = await fetch("/api/sizing-feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: text, idx: IDX, provider: provider, api_key: apiKey }),
+    });
+    const data = await resp.json();
+    if (data.error) {
+      resultDiv.innerHTML = '<div class="flash">' + data.error + '</div>';
+    } else {
+      const modeLabel = data.mode === "ai" ? "AI Coach feedback" : "Structured self-assessment";
+      let html = '<div class="feedback-box mode-' + data.mode + '"><strong>' + modeLabel + '</strong><br><br>' + data.feedback + '</div>';
+      if (data.note) html += '<div class="feedback-note">' + data.note + '</div>';
+      resultDiv.innerHTML = html;
+    }
+  } catch (e) {
+    resultDiv.innerHTML = '<div class="flash">Something went wrong. Try again.</div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Get feedback";
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Case Library — Case Prep</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="navbar"><div class="navbar-inner">
+  <span class="logo">Case Prep</span>
+  <nav>
+    <a href="/cases" class="active">Cases</a>
+    <a href="/frameworks">Frameworks</a>
+    <a href="/fit">Fit Questions</a>
+    <a href="/market-sizing">Market Sizing</a>
+    <a href="/math-drill">Math Drill</a>
+    <a href="/firms">Firm Guides</a>
+  </nav>
+</div></div>
+<div class="wrap">
+  <h1>Case Library</h1>
+  <p class="sub">{{ cases|length }} mock case{{ 's' if cases|length != 1 }}. Filter by the firm style each case is modeled after.</p>
+
+  <div class="filter-row">
+    <a class="filter-pill {{ 'active' if not active_firm }}" href="/cases">All firms</a>
+    {% for f in firms %}
+    <a class="filter-pill {{ 'active' if active_firm == f.slug }}" href="/cases?firm={{ f.slug }}">{{ f.name }}</a>
+    {% endfor %}
+  </div>
+
+  <div class="case-grid">
+    {% for c in cases %}
+    <a class="case-card" href="/cases/{{ c.slug }}">
+      <div class="badges">
+        <span class="badge">{{ c.case_type }}</span>
+        <span class="badge difficulty-{{ c.difficulty|lower }}">{{ c.difficulty }}</span>
+      </div>
+      <h3>{{ c.title }}</h3>
+      <p>{{ c.prompt[:130] }}{{ '...' if c.prompt|length > 130 }}</p>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+</body>
+</html>

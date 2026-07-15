@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ fw.name }} — Case Prep</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="navbar"><div class="navbar-inner">
+  <span class="logo">Case Prep</span>
+  <nav>
+    <a href="/cases">Cases</a>
+    <a href="/frameworks" class="active">Frameworks</a>
+    <a href="/fit">Fit Questions</a>
+    <a href="/market-sizing">Market Sizing</a>
+    <a href="/math-drill">Math Drill</a>
+    <a href="/firms">Firm Guides</a>
+  </nav>
+</div></div>
+<div class="wrap">
+  <p class="sub"><a href="/frameworks">← Frameworks</a></p>
+  <h1>{{ fw.name }}</h1>
+
+  <div class="card">
+    <h2>When to use it</h2>
+    <p>{{ fw.when }}</p>
+  </div>
+
+  <div class="card">
+    <h2>Structure</h2>
+    <ol>
+      {% for step in fw.structure %}<li style="margin-bottom:10px;">{{ step }}</li>{% endfor %}
+    </ol>
+  </div>
+
+  <div class="card" style="background:var(--warn-bg);border-color:var(--warn);">
+    <h2 style="color:var(--warn);">Common pitfall</h2>
+    <p>{{ fw.pitfall }}</p>
+  </div>
+
+  <div class="actions">
+    <a class="btn" href="/cases">Practice a case →</a>
+  </div>
+</div>
+</body>
+</html>

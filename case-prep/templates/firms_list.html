@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Firm Guides — Case Prep</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="navbar"><div class="navbar-inner">
+  <span class="logo">Case Prep</span>
+  <nav>
+    <a href="/cases">Cases</a>
+    <a href="/frameworks">Frameworks</a>
+    <a href="/fit">Fit Questions</a>
+    <a href="/market-sizing">Market Sizing</a>
+    <a href="/math-drill">Math Drill</a>
+    <a href="/firms" class="active">Firm Guides</a>
+  </nav>
+</div></div>
+<div class="wrap">
+  <h1>Firm Guides</h1>
+  <p class="sub">What to expect at each firm's interview process, based on publicly known interview formats.
+  Formats evolve, always check the firm's own careers site for the latest process details.</p>
+
+  <div class="case-grid">
+    {% for f in firms %}
+    <a class="case-card" href="/firms/{{ f.slug }}">
+      <h3>{{ f.name }}</h3>
+      <p>{{ f.format }}</p>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+</body>
+</html>
