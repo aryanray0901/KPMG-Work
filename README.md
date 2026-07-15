@@ -1,24 +1,24 @@
 # KPMG Work
 
-A collection of small internal tools built to automate the tedious parts of quarterly reporting and client deliverable prep — the kind of work that eats a rising senior's time during busy season.
+A collection of internal tools for automating recurring tasks in quarterly reporting and client deliverable preparation.
 
-All data in both tools is fictional, built for demonstration only.
+All data included in both tools is fictional and intended for demonstration purposes only.
 
 ## [Deck Refresh](deck-refresh/)
 
-Updates the numbers in a PowerPoint or Excel file from new data — while keeping every color, font, layout, and chart exactly as it was. Upload a deck, upload the new quarter's numbers, review the matches, and get back the same file with updated figures. Includes a synchronized side-by-side viewer that renders the actual before/after presentation so you can see precisely what changed before committing to it.
+Updates the numbers in a PowerPoint or Excel file using new source data, while preserving every color, font, layout, and chart. The user uploads a file and the updated figures, reviews the proposed changes, and receives the same file back with the values updated. Includes a synchronized side-by-side viewer that renders the original and updated presentation so changes can be verified before the file is finalized.
 
 ![Deck Refresh](deck-refresh/screenshots/executive-summary.png)
 
 ## [Variance Insights](variance-insights/)
 
-Turns a budget-vs-actual data table into a client-ready variance analysis slide and workbook, with commentary already drafted. Computes variances, classifies each line as favorable or unfavorable based on what kind of metric it is, flags what's material against a threshold you set, and drafts the factual half of the commentary — leaving a clear marker for the human judgment part ("why") that no tool should pretend to know.
+Converts a budget-versus-actual data table into a formatted variance analysis slide and workbook, with supporting commentary drafted automatically. The tool calculates variances, classifies each line item as favorable or unfavorable based on the type of metric, flags variances that exceed a defined materiality threshold, and drafts commentary describing the size and direction of each material variance. Explanatory context is left for the reviewer to complete.
 
 ![Variance Insights](variance-insights/screenshots/variance-slide.png)
 
 ## Running either tool
 
-Each folder is a fully self-contained local Flask app — see the README inside each for setup. Both:
-- Run entirely locally; no data leaves your machine
-- Ship with a double-click launcher for Mac and Windows
-- Include a fictional sample dataset so you can try it immediately
+Each folder is a self-contained local Flask application. See the README in each folder for setup instructions. Both applications:
+- Run entirely on the local machine; no data is transmitted externally
+- Include a double-click launcher for Mac and Windows
+- Include a fictional sample dataset for immediate testing
