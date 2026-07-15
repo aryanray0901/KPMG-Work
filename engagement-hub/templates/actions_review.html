@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review — Action Tracker</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner"><span class="logo">KPMG</span><span class="tag">Engagement Hub</span></div></div>
+<div class="wrap">
+  <h1>Review the action items.</h1>
+  <p class="sub">{{ items|length }} candidate line{{ 's' if items|length != 1 else '' }} found. Uncheck anything that
+  isn't really an action item, and edit the text, owner, due date, or priority as needed.</p>
+
+  <form action="/actions/export/{{ sid }}" method="post">
+    <div class="card">
+      {% for item in items %}
+      <div class="item-row">
+        <div class="item-row-header">
+          <input type="checkbox" name="include_{{ loop.index0 }}" {{ 'checked' if item.include }}>
+          <span class="owner-badge">{{ item.owner }}</span>
+          {% if item.priority == 'High' %}<span class="priority-high">High priority</span>{% endif %}
+        </div>
+        <div class="item-fields">
+          <textarea name="text_{{ loop.index0 }}">{{ item.text }}</textarea>
+          <input type="text" name="owner_{{ loop.index0 }}" value="{{ item.owner }}" placeholder="Owner">
+          <input type="text" name="due_{{ loop.index0 }}" value="{{ item.due }}" placeholder="Due date">
+          <select name="priority_{{ loop.index0 }}">
+            <option value="High" {{ 'selected' if item.priority == 'High' }}>High</option>
+            <option value="Medium" {{ 'selected' if item.priority == 'Medium' }}>Medium</option>
+            <option value="Low" {{ 'selected' if item.priority == 'Low' }}>Low</option>
+          </select>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="actions">
+      <button class="btn" type="submit">Generate tracker, email &amp; slide →</button>
+      <a class="btn secondary" href="/actions">Start over</a>
+    </div>
+  </form>
+</div>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Engagement Hub</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner"><span class="logo">KPMG</span><span class="tag">Engagement Hub</span></div></div>
+<div class="wrap">
+  <h1>Engagement Hub</h1>
+  <p class="sub">Three tools for recurring engagement work: turning meeting notes into a tracked action list,
+  turning a data table into an executive summary, and benchmarking a client against a peer set.</p>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="module-grid">
+    <a class="module-card" href="/actions">
+      <div class="icon">✓</div>
+      <h3>Action Tracker</h3>
+      <p>Paste meeting notes and get a reviewed action item list, an Excel tracker, a follow-up email draft, and a summary slide.</p>
+    </a>
+    <a class="module-card" href="/summary">
+      <div class="icon">▤</div>
+      <h3>Executive Summary</h3>
+      <p>Upload a period-over-period data table and get a KPI-and-narrative executive summary slide and workbook.</p>
+    </a>
+    <a class="module-card" href="/benchmark">
+      <div class="icon">◫</div>
+      <h3>Benchmarking</h3>
+      <p>Compare a client's metrics against a peer set and get a quartile-ranked benchmarking slide and workbook.</p>
+    </a>
+  </div>
+
+  <footer class="note">Each module runs entirely locally. No file is transmitted to an external service.</footer>
+</div>
+</body>
+</html>

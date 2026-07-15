@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review — Executive Summary</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner"><span class="logo">KPMG</span><span class="tag">Engagement Hub</span></div></div>
+<div class="wrap">
+  <h1>Review the analysis.</h1>
+  <p class="sub">Detected <b>{{ config.label_col }}</b> as the label column, comparing
+  <b>{{ analysis.first_col }}</b> to <b>{{ analysis.last_col }}</b>.</p>
+
+  <div class="stat-row">
+    <div class="stat"><b>${{ "%.1f"|format(analysis.total_last) }}{{ config.currency_suffix }}</b>total {{ config.metric_name }}</div>
+    <div class="stat"><b>{{ "%+.1f"|format(analysis.total_change_pct) }}%</b>change</div>
+    <div class="stat"><b>{{ analysis.rows|length }}</b>line items</div>
+  </div>
+
+  <form action="/summary/export/{{ sid }}" method="post">
+    <div class="card">
+      <h2>Key highlights</h2>
+      <p class="hint">Uncheck or edit any drafted bullet before it's included on the slide.</p>
+      {% for b in analysis.bullets %}
+      <div class="commentary-row" style="border-bottom:1px solid var(--line); padding:10px 0;">
+        <label class="include-check">
+          <input type="checkbox" name="include_bullet_{{ loop.index0 }}" checked>
+          Include
+        </label>
+        <textarea name="bullet_{{ loop.index0 }}">{{ b }}</textarea>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="card">
+      <h2>Underlying data</h2>
+      <table class="var-table">
+        <tr><th>{{ config.label_col }}</th><th class="num">{{ analysis.first_col }}</th><th class="num">{{ analysis.last_col }}</th><th class="num">Change</th></tr>
+        {% for r in analysis.rows|sort(attribute='last', reverse=True) %}
+        <tr>
+          <td>{{ r.label }}</td>
+          <td class="num">${{ "%.1f"|format(r.first) }}{{ config.currency_suffix }}</td>
+          <td class="num">${{ "%.1f"|format(r.last) }}{{ config.currency_suffix }}</td>
+          <td class="num {{ 'var-pos' if r.pct_change and r.pct_change >= 0 else 'var-neg' }}">
+            {{ "%+.1f"|format(r.pct_change) if r.pct_change is not none else "n/a" }}%
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <div class="actions">
+      <button class="btn" type="submit">Generate slide &amp; workbook →</button>
+      <a class="btn secondary" href="/summary">Start over</a>
+    </div>
+  </form>
+</div>
+</body>
+</html>

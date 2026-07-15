@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Benchmarking — Engagement Hub</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner"><span class="logo">KPMG</span><span class="tag">Engagement Hub</span></div></div>
+<div class="wrap">
+  <p class="sub"><a href="/">← Engagement Hub</a></p>
+  <h1>Benchmarking</h1>
+  <p class="sub">Upload a table with a metric column, a target (client) column, and one or more peer columns. The tool
+  ranks the target against the peer set for each metric, accounting for whether higher or lower is favorable based on
+  the metric's name, and classifies the result into a quartile.</p>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form action="/benchmark/process" method="post" enctype="multipart/form-data">
+    <div class="card">
+      <h2>Data</h2>
+      <p class="hint">First numeric column is treated as the target, remaining numeric columns as peers.</p>
+      <input type="file" name="data_file" accept=".xlsx,.xls,.csv" required>
+    </div>
+
+    <div class="card">
+      <h2>Settings</h2>
+      <div class="config-grid">
+        <div>
+          <label class="field-label">Slide title</label>
+          <input type="text" name="title" placeholder="Q4 Benchmarking Analysis" value="Q4 Benchmarking Analysis">
+        </div>
+        <div>
+          <label class="field-label">Subtitle (optional)</label>
+          <input type="text" name="subtitle" placeholder="Meridian Retail Group vs. peer set">
+        </div>
+        <div>
+          <label class="field-label">Target company name</label>
+          <input type="text" name="target_name" placeholder="Meridian Retail Group" value="Target">
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" type="submit">Analyze →</button>
+    </div>
+  </form>
+</div>
+</body>
+</html>

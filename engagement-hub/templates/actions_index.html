@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action Tracker — Engagement Hub</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner"><span class="logo">KPMG</span><span class="tag">Engagement Hub</span></div></div>
+<div class="wrap">
+  <p class="sub"><a href="/">← Engagement Hub</a></p>
+  <h1>Action Tracker</h1>
+  <p class="sub">Paste your meeting notes, ideally as bullet points. Lines mentioning an attendee by name, a due date,
+  or common action phrasing ("will send", "needs to", "follow up") are detected automatically. Everything is
+  reviewable and editable before export.</p>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form action="/actions/process" method="post" enctype="multipart/form-data">
+    <div class="card">
+      <h2>Meeting details</h2>
+      <div class="config-grid">
+        <div>
+          <label class="field-label">Meeting title</label>
+          <input type="text" name="meeting_title" placeholder="Meridian Retail Group — Kickoff Call" value="">
+        </div>
+        <div>
+          <label class="field-label">Meeting date</label>
+          <input type="text" name="meeting_date" placeholder="July 15, 2026">
+        </div>
+        <div>
+          <label class="field-label">Attendees (comma-separated)</label>
+          <input type="text" name="attendees" placeholder="Sarah Chen, James Cole, Priya Nair">
+        </div>
+        <div>
+          <label class="field-label">Your name (for the follow-up email)</label>
+          <input type="text" name="sender_name" placeholder="Alex Rivera">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Meeting notes</h2>
+      <p class="hint">Paste notes below, and/or upload a text file. Attendee names help the tool assign owners accurately.</p>
+      <textarea class="notes-area" name="notes_text" placeholder="- Sarah Chen will send the trial balance by Friday.&#10;- James Cole to review the draft workplan and confirm scope by 7/18.&#10;- URGENT: Priya Nair needs to escalate the data access issue ASAP."></textarea>
+      <div style="margin-top:14px;">
+        <label class="field-label">Or upload a .txt file</label>
+        <input type="file" name="notes_file" accept=".txt">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" type="submit">Extract action items →</button>
+    </div>
+  </form>
+</div>
+</body>
+</html>

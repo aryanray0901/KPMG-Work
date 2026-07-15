@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Result — Action Tracker</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner"><span class="logo">KPMG</span><span class="tag">Engagement Hub</span></div></div>
+<div class="wrap">
+  <h1>Tracker, email, and slide ready.</h1>
+  <p class="sub">{{ count }} action item{{ 's' if count != 1 else '' }} included.
+  {% if not rendering_ok and soffice_missing %}Install LibreOffice for a rendered slide preview here — the files below are complete either way.{% endif %}</p>
+
+  <div class="actions" style="margin-bottom:28px;">
+    <a class="btn" href="/actions/download/{{ sid }}/xlsx">Download Excel tracker</a>
+    <a class="btn secondary" href="/actions/download/{{ sid }}/pptx">Download summary slide</a>
+    <a class="btn secondary" href="/actions/download/{{ sid }}/email">Download email draft</a>
+    <a class="btn secondary" href="/">Start over</a>
+  </div>
+
+  {% if rendering_ok %}
+  <div class="preview-frame" style="margin-bottom:24px;">
+    <img src="/actions/preview_image/{{ sid }}" alt="Action summary slide preview">
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <h2>Follow-up email draft</h2>
+    <div class="email-preview">{{ email_text }}</div>
+  </div>
+</div>
+</body>
+</html>

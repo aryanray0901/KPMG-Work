@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Result — Benchmarking</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner"><span class="logo">KPMG</span><span class="tag">Engagement Hub</span></div></div>
+<div class="wrap">
+  <h1>Slide and workbook ready.</h1>
+  <p class="sub">
+    {% if not rendering_ok and soffice_missing %}Install LibreOffice for a rendered preview here — the files below are complete and correct either way.{% endif %}
+  </p>
+
+  <div class="actions" style="margin-bottom:28px;">
+    <a class="btn" href="/benchmark/download/{{ sid }}/pptx">Download PowerPoint slide</a>
+    <a class="btn secondary" href="/benchmark/download/{{ sid }}/xlsx">Download Excel workbook</a>
+    <a class="btn secondary" href="/">Start over</a>
+  </div>
+
+  {% if rendering_ok %}
+  <div class="preview-frame">
+    <img src="/benchmark/preview_image/{{ sid }}" alt="Benchmarking slide preview">
+  </div>
+  {% endif %}
+</div>
+</body>
+</html>

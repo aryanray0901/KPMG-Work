@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review — Benchmarking</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner"><span class="logo">KPMG</span><span class="tag">Engagement Hub</span></div></div>
+<div class="wrap">
+  <h1>Review the benchmarking results.</h1>
+  <p class="sub">Comparing <b>{{ config.target_col }}</b> ({{ config.target_name }}) against peer columns
+  <b>{{ config.peer_cols|join(', ') }}</b>.</p>
+
+  <div class="stat-row">
+    <div class="stat"><b>{{ rows|length }}</b>metrics</div>
+    <div class="stat"><b>{{ top_count }}</b>top quartile</div>
+    <div class="stat"><b>{{ bottom_count }}</b>bottom quartile</div>
+  </div>
+
+  <form action="/benchmark/export/{{ sid }}" method="post">
+    <div class="card">
+      <h2>Benchmarking table</h2>
+      <table class="var-table">
+        <tr>
+          <th><input type="checkbox" checked disabled title="individually toggled below"></th>
+          <th>Metric</th>
+          <th class="num">{{ config.target_name }}</th>
+          <th class="num">Peer Median</th>
+          <th class="num">Peer Range</th>
+          <th class="num">Percentile</th>
+          <th>Positioning</th>
+        </tr>
+        {% for r in rows %}
+        <tr>
+          <td><input type="checkbox" name="include_{{ loop.index0 }}" checked></td>
+          <td>{{ r.metric }}</td>
+          <td class="num">{{ "%.1f"|format(r.target) }}</td>
+          <td class="num">{{ "%.1f"|format(r.peer_median) }}</td>
+          <td class="num">{{ "%.1f"|format(r.peer_min) }} – {{ "%.1f"|format(r.peer_max) }}</td>
+          <td class="num">{{ "%.0f"|format(r.percentile) if r.percentile is not none else "n/a" }}th</td>
+          <td>
+            <span class="tag-badge quartile-{{ r.quartile_class }}">{{ r.quartile }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <div class="actions">
+      <button class="btn" type="submit">Generate slide &amp; workbook →</button>
+      <a class="btn secondary" href="/benchmark">Start over</a>
+    </div>
+  </form>
+</div>
+</body>
+</html>

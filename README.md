@@ -2,7 +2,7 @@
 
 A collection of internal tools for automating recurring tasks in quarterly reporting and client deliverable preparation.
 
-All data included in both tools is fictional and intended for demonstration purposes only.
+All data included is fictional and intended for demonstration purposes only.
 
 ## [Deck Refresh](deck-refresh/)
 
@@ -16,9 +16,15 @@ Converts a budget-versus-actual data table into a formatted variance analysis sl
 
 ![Variance Insights](variance-insights/screenshots/variance-slide.png)
 
-## Running either tool
+## [Engagement Hub](engagement-hub/)
 
-Each folder is a self-contained local Flask application. See the README in each folder for setup instructions. Both applications:
+A workbench combining three tools for recurring engagement work. The Action Tracker converts meeting notes into a reviewed action item list, an Excel tracker, a follow-up email draft, and a summary slide. The Executive Summary module converts a period-over-period data table into a KPI-and-narrative summary slide. The Benchmarking module compares a client's metrics against a peer set and produces a quartile-ranked benchmarking slide and workbook.
+
+![Engagement Hub](engagement-hub/screenshots/benchmarking.png)
+
+## Running any tool
+
+Each folder is a self-contained local Flask application. See the README in each folder for setup instructions. All three:
 - Run entirely on the local machine; no data is transmitted externally
 - Include a double-click launcher for Mac and Windows
 - Include a fictional sample dataset for immediate testing
