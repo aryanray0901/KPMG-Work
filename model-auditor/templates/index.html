@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Model Auditor</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner"><span class="logo">KPMG</span><span class="tag">Model Auditor</span></div></div>
+<div class="wrap">
+  <h1>Model Auditor</h1>
+  <p class="sub">Reads an Excel workbook's actual formulas, not just its values, and finds hardcoded assumptions
+  buried in formulas, formulas that break the pattern of their row or column, circular references, and cached
+  error values. Produces a health report slide and an annotated copy of the workbook with every flagged cell
+  highlighted and commented.</p>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form action="/process" method="post" enctype="multipart/form-data">
+    <div class="card">
+      <h2>Workbook</h2>
+      <p class="hint">Any .xlsx file. Larger models with more sheets take a little longer to scan.</p>
+      <input type="file" name="model_file" accept=".xlsx" required>
+    </div>
+
+    <div class="card">
+      <h2>Settings</h2>
+      <div class="config-grid">
+        <div>
+          <label class="field-label">Report title</label>
+          <input type="text" name="title" placeholder="Model Health Report" value="Model Health Report">
+        </div>
+        <div>
+          <label class="field-label">Subtitle</label>
+          <input type="text" name="subtitle" placeholder="Q4 Revenue Build - Diligence Review">
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" type="submit">Scan the workbook →</button>
+    </div>
+  </form>
+
+  <footer class="note">Everything runs locally. No file is transmitted to an external service.</footer>
+</div>
+</body>
+</html>

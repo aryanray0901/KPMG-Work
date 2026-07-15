@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review — Model Auditor</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner"><span class="logo">KPMG</span><span class="tag">Model Auditor</span></div></div>
+<div class="wrap">
+  <h1>Scan complete.</h1>
+  <p class="sub">{{ config.filename }} — {{ stats.total_formulas }} formulas scanned across {{ stats.sheets_scanned }} sheet{{ 's' if stats.sheets_scanned != 1 }}.</p>
+
+  <div class="grade-circle {{ 'grade-good' if stats.health_score >= 80 else ('grade-warn' if stats.health_score >= 50 else 'grade-bad') }}">
+    <div class="letter">{{ grade }}</div>
+    <div class="score">{{ stats.health_score }}/100</div>
+  </div>
+
+  <div class="stat-row" style="justify-content:center;">
+    <div class="stat"><b>{{ stats.high_count }}</b>high severity</div>
+    <div class="stat"><b>{{ stats.medium_count }}</b>medium severity</div>
+    <div class="stat"><b>{{ stats.low_count }}</b>low severity</div>
+  </div>
+
+  <div class="card">
+    <h2>Findings</h2>
+    {% if issues %}
+      {% for i in issues %}
+      <div class="issue-row">
+        <div class="issue-loc">{{ i.sheet }}!{{ i.cell }}</div>
+        <div class="issue-body">
+          <div class="issue-type">{{ i.type }} <span class="severity-badge severity-{{ i.severity|lower }}">{{ i.severity }}</span></div>
+          <div class="issue-desc">{{ i.description }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="hint">No issues found. This workbook's formulas are consistent, free of hardcoded values, and free of errors and circular references.</p>
+    {% endif %}
+  </div>
+
+  <form action="/generate/{{ sid }}" method="post">
+    <div class="actions">
+      <button class="btn" type="submit">Generate report &amp; annotated workbook →</button>
+      <a class="btn secondary" href="/">Start over</a>
+    </div>
+  </form>
+</div>
+</body>
+</html>

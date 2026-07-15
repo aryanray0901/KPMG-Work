@@ -28,9 +28,15 @@ Orchestrates a full quarter-close package from a single set of uploads. It reuse
 
 ![Close Cockpit executive summary](close-cockpit/screenshots/package-slide-2.png)
 
+## [Model Auditor](model-auditor/)
+
+Reads an Excel workbook's actual formulas, not just its values, and finds the kinds of errors that show up in real financial model reviews: hardcoded assumptions mixed into formulas, formulas that break the pattern of their row or column, circular references, and cached error values. This is a different technical problem from the other tools here, which all work with cell values; this one parses formula syntax, builds a cell dependency graph, and compares formula structure across a range. Produces a model health report with a 0-100 score and letter grade, and an annotated copy of the workbook with every flagged cell highlighted and commented.
+
+![Model health report](model-auditor/screenshots/health-report.png)
+
 ## Running any tool
 
-Each folder is a self-contained local Flask application. See the README in each folder for setup instructions. All four:
+Each folder is a self-contained local Flask application. See the README in each folder for setup instructions. All five:
 - Run entirely on the local machine; no data is transmitted externally
 - Include a double-click launcher for Mac and Windows
-- Include a fictional sample dataset for immediate testing
+- Include fictional sample data for immediate testing
