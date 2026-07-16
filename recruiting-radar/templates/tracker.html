@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Tracker — Recruiting Radar</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="navbar"><div class="navbar-inner">
+  <span class="logo">Recruiting Radar</span>
+  <nav>
+    <a href="/deadlines">Deadlines</a>
+    <a href="/networking">Networking</a>
+    <a href="/resume-check">Resume Check</a>
+    <a href="/nontarget">Non-Target Playbook</a>
+    <a href="/stats">The Real Numbers</a>
+    <a href="/tracker" class="active">My Tracker</a>
+  </nav>
+</div></div>
+<div class="wrap">
+  <h1>My Application Tracker</h1>
+  <p class="sub">A simple personal tracker for the firms and programs you're applying to. Stored in this browser
+  session only, not saved to a file or sent anywhere.</p>
+
+  <div class="card">
+    <form action="/tracker/add" method="post">
+      <div class="config-grid">
+        <div><label class="field-label">Firm</label><input type="text" name="firm" required></div>
+        <div><label class="field-label">Program</label><input type="text" name="program" placeholder="e.g. Business Analyst Internship"></div>
+        <div>
+          <label class="field-label">Status</label>
+          <select name="status">
+            <option>Planning to apply</option>
+            <option>Applied</option>
+            <option>Interview scheduled</option>
+            <option>Interviewed, awaiting result</option>
+            <option>Offer received</option>
+            <option>Rejected</option>
+            <option>Declined / withdrew</option>
+          </select>
+        </div>
+        <div><label class="field-label">Notes</label><input type="text" name="notes"></div>
+      </div>
+      <div class="actions"><button class="btn" type="submit">Add to tracker</button></div>
+    </form>
+
+    {% if applications %}
+    <table class="tracker-table">
+      <tr><th>Firm</th><th>Program</th><th>Status</th><th>Notes</th></tr>
+      {% for a in applications %}
+      <tr><td>{{ a.firm }}</td><td>{{ a.program }}</td><td>{{ a.status }}</td><td>{{ a.notes }}</td></tr>
+      {% endfor %}
+    </table>
+    <form action="/tracker/clear" method="post" style="margin-top:12px;">
+      <button class="btn secondary" type="submit">Clear tracker</button>
+    </form>
+    {% else %}
+    <p class="hint">Nothing tracked yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="actions">
+    <a class="btn secondary" href="/deadlines">Check deadlines before adding entries →</a>
+  </div>
+</div>
+</body>
+</html>

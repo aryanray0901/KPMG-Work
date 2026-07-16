@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Real Numbers — Recruiting Radar</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="navbar"><div class="navbar-inner">
+  <span class="logo">Recruiting Radar</span>
+  <nav>
+    <a href="/deadlines">Deadlines</a>
+    <a href="/networking">Networking</a>
+    <a href="/resume-check">Resume Check</a>
+    <a href="/nontarget">Non-Target Playbook</a>
+    <a href="/stats" class="active">The Real Numbers</a>
+    <a href="/tracker">My Tracker</a>
+  </nav>
+</div></div>
+<div class="wrap">
+  <h1>The Real Numbers</h1>
+  <p class="sub">Understanding why the process works the way it does makes the advice on the rest of this site
+  make sense, why networking matters this much, why resume formatting isn't a minor detail. Every figure below
+  is sourced.</p>
+
+  {% for s in stats %}
+  <div class="stat-card">
+    <div class="big-number">{{ s.stat }}</div>
+    <div class="stat-label">{{ s.label }}</div>
+    <div class="stat-detail">{{ s.detail }}</div>
+    <div class="stat-source">Source: <a href="{{ s.source_url }}" target="_blank" rel="noopener noreferrer">{{ s.source_name }}</a></div>
+  </div>
+  {% endfor %}
+</div>
+</body>
+</html>

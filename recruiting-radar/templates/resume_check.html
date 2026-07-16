@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resume Check — Recruiting Radar</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="navbar"><div class="navbar-inner">
+  <span class="logo">Recruiting Radar</span>
+  <nav>
+    <a href="/deadlines">Deadlines</a>
+    <a href="/networking">Networking</a>
+    <a href="/resume-check" class="active">Resume Check</a>
+    <a href="/nontarget">Non-Target Playbook</a>
+    <a href="/stats">The Real Numbers</a>
+    <a href="/tracker">My Tracker</a>
+  </nav>
+</div></div>
+<div class="wrap">
+  <h1>Resume Check</h1>
+  <p class="sub">Paste your resume text below for an automated check against the most commonly cited consulting
+  resume mistakes. This is pattern matching, not a human reviewer, it can miss things and flag things that are
+  actually fine, use it as a first pass, not a final verdict.</p>
+
+  <div class="card">
+    <textarea id="resume-text" placeholder="Paste your resume text here..." style="min-height:260px;"></textarea>
+    <div class="actions">
+      <button class="btn" id="check-btn" onclick="runCheck()">Check my resume</button>
+    </div>
+    <div id="check-results"></div>
+  </div>
+
+  <div class="card">
+    <h2>Common mistakes, with examples</h2>
+    {% for m in mistakes %}
+    <div class="mistake-card">
+      <div class="mistake-title">{{ m.mistake }}</div>
+      <div class="mistake-example mistake-bad">✗ {{ m.example_bad }}</div>
+      <div class="mistake-example mistake-good">✓ {{ m.example_good }}</div>
+      {% if m.note %}<div class="template-note" style="margin-top:6px;">{{ m.note }}</div>{% endif %}
+      <div class="stat-source">Source: <a href="{{ m.source_url }}" target="_blank" rel="noopener noreferrer">{{ m.source_name }}</a></div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+async function runCheck() {
+  const text = document.getElementById("resume-text").value.trim();
+  const resultsDiv = document.getElementById("check-results");
+  const btn = document.getElementById("check-btn");
+  if (!text) {
+    resultsDiv.innerHTML = '<div class="flash">Paste your resume text first.</div>';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = "Checking...";
+  try {
+    const resp = await fetch("/api/resume-check", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: text }),
+    });
+    const data = await resp.json();
+    if (data.error) {
+      resultsDiv.innerHTML = '<div class="flash">' + data.error + '</div>';
+    } else {
+      let html = '<div style="margin-top:16px;">';
+      for (const r of data.results) {
+        html += '<div class="checker-result"><span class="checker-status status-' + r.status + '">' + r.status + '</span><strong>' + r.check + '</strong><br><span style="font-size:13px;color:var(--ink-soft);">' + r.detail + '</span></div>';
+      }
+      html += '</div>';
+      resultsDiv.innerHTML = html;
+    }
+  } catch (e) {
+    resultsDiv.innerHTML = '<div class="flash">Something went wrong. Try again.</div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Check my resume";
+  }
+}
+</script>
+</body>
+</html>

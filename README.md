@@ -10,6 +10,12 @@ A fully in-browser case interview practice platform for consulting interviews. U
 
 ![Case Prep homepage](case-prep/screenshots/homepage.png)
 
+## [Recruiting Radar](recruiting-radar/)
+
+Everything that happens before a consulting interview: real application deadlines (including the early diversity and sophomore-year programs most students miss entirely), sourced statistics on acceptance rates and resume screening, a networking playbook with real techniques and outreach templates, an automated resume checker, and a non-target/low-GPA playbook. Every fact is sourced, and deadline countdowns are computed live against the actual current date rather than hardcoded. Nothing is downloaded here either; the personal trackers live in the browser session only.
+
+![Recruiting Radar homepage](recruiting-radar/screenshots/homepage.png)
+
 ## [Engagement Hub](engagement-hub/)
 
 A workbench combining three tools for recurring engagement work. Each module now shows every generated PowerPoint slide, Excel sheet, and text output directly on the result page before download.
@@ -42,7 +48,7 @@ Updates the numbers in a PowerPoint or Excel file using new source data, while p
 
 ## Running any tool
 
-Each folder is a self-contained local Flask application. See the README in each folder for setup instructions. All six:
+Each folder is a self-contained local Flask application. See the README in each folder for setup instructions. All seven:
 - Run entirely on the local machine; no data is transmitted externally
 - Include a double-click launcher for Mac and Windows
-- Include fictional sample data (or, for Case Prep, built-in practice content) for immediate use
+- Include fictional sample data (or, for Case Prep and Recruiting Radar, built-in content) for immediate use

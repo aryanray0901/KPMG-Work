@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Non-Target Playbook — Recruiting Radar</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="navbar"><div class="navbar-inner">
+  <span class="logo">Recruiting Radar</span>
+  <nav>
+    <a href="/deadlines">Deadlines</a>
+    <a href="/networking">Networking</a>
+    <a href="/resume-check">Resume Check</a>
+    <a href="/nontarget" class="active">Non-Target Playbook</a>
+    <a href="/stats">The Real Numbers</a>
+    <a href="/tracker">My Tracker</a>
+  </nav>
+</div></div>
+<div class="wrap">
+  <h1>Non-Target &amp; Low-GPA Playbook</h1>
+  <p class="sub">Not being at a target school or having a top-of-range GPA are two of the most commonly cited
+  structural disadvantages in consulting recruiting. Neither is disqualifying, but both require a deliberate,
+  different strategy than the default advice most students get.</p>
+
+  <div class="card">
+    {% for item in playbook %}
+    <div class="playbook-item">
+      <h3>{{ item.heading }}</h3>
+      <p>{{ item.body }}</p>
+      <div class="stat-source">Source: <a href="{{ item.source_url }}" target="_blank" rel="noopener noreferrer">{{ item.source_name }}</a></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="actions">
+    <a class="btn" href="/networking">Go to the Networking Playbook →</a>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deadlines — Recruiting Radar</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="navbar"><div class="navbar-inner">
+  <span class="logo">Recruiting Radar</span>
+  <nav>
+    <a href="/deadlines" class="active">Deadlines</a>
+    <a href="/networking">Networking</a>
+    <a href="/resume-check">Resume Check</a>
+    <a href="/nontarget">Non-Target Playbook</a>
+    <a href="/stats">The Real Numbers</a>
+    <a href="/tracker">My Tracker</a>
+  </nav>
+</div></div>
+<div class="wrap">
+  <h1>Deadline Radar</h1>
+  <p class="sub">Every entry links to its source. Diversity and sophomore programs are tagged separately, they
+  consistently carry the earliest deadlines of the entire cycle and are the ones most students find out about too
+  late. Countdown is computed against today, {{ today|fmtdate }}.</p>
+
+  <div class="filter-row">
+    <a class="filter-pill {{ 'active' if not active_tier }}" href="/deadlines">All firms</a>
+    {% for t in tiers %}
+    <a class="filter-pill {{ 'active' if active_tier == t }}" href="/deadlines?tier={{ t }}{{ '&type='+active_type if active_type }}">{{ t }}</a>
+    {% endfor %}
+  </div>
+  <div class="filter-row">
+    <a class="filter-pill {{ 'active' if not active_type }}" href="/deadlines{{ '?tier='+active_tier if active_tier }}">All types</a>
+    {% for t in types %}
+    <a class="filter-pill {{ 'active' if active_type == t }}" href="/deadlines?type={{ t }}{{ '&tier='+active_tier if active_tier }}">{{ t }}</a>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    {% for d in items %}
+    {% set delta = (d.date - today).days %}
+    <div class="deadline-row">
+      <div class="deadline-countdown {{ 'countdown-passed' if delta < 0 else ('countdown-urgent' if delta <= 14 else ('countdown-soon' if delta <= 45 else 'countdown-later')) }}">
+        {% if delta < 0 %}Passed{% else %}{{ delta }} days{% endif %}
+      </div>
+      <div class="deadline-body">
+        <div class="deadline-firm">{{ d.firm }} <span class="deadline-tag">{{ d.tier }}</span><span class="deadline-tag">{{ d.type }}</span></div>
+        <div class="deadline-program">{{ d.program }}</div>
+        <div class="deadline-meta">
+          Eligible: {{ d.eligible }} &middot; {{ d.date|fmtdate }}
+          {% if d.certainty == 'approximate' %}&middot; <em>date is approximate, historically around this time</em>{% endif %}
+          &middot; <a href="{{ d.source_url }}" target="_blank" rel="noopener noreferrer">{{ d.source_name }}</a>
+        </div>
+        {% if d.note %}<div class="deadline-meta" style="margin-top:4px;">{{ d.note }}</div>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <footer class="note">Recruiting cycles shift every year and firms sometimes revise deadlines mid-cycle. Always confirm against the firm's official careers page before treating any date here as final.</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recruiting Radar</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="navbar"><div class="navbar-inner">
+  <span class="logo">Recruiting Radar</span>
+  <nav>
+    <a href="/deadlines">Deadlines</a>
+    <a href="/networking">Networking</a>
+    <a href="/resume-check">Resume Check</a>
+    <a href="/nontarget">Non-Target Playbook</a>
+    <a href="/stats">The Real Numbers</a>
+    <a href="/tracker">My Tracker</a>
+  </nav>
+</div></div>
+<div class="wrap">
+  <h1>Everything before the interview.</h1>
+  <p class="sub">Case interview practice is covered elsewhere. This is the part that trips up more
+  candidates than the interview itself: knowing the real deadlines before they pass, networking without
+  an existing network, and getting a resume past a 30-second screen. Today is {{ today|fmtdate }}.</p>
+
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num">{{ deadline_count }}</div><div class="lbl">Real deadlines tracked</div></div>
+    <div class="hero-stat"><div class="num">{{ stat_count }}</div><div class="lbl">Sourced stats</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Next deadlines from today</h2>
+    {% if upcoming %}
+      {% for d in upcoming %}
+      <div class="deadline-row">
+        <div class="deadline-countdown {{ 'countdown-urgent' if (d.date - today).days <= 14 else ('countdown-soon' if (d.date - today).days <= 45 else 'countdown-later') }}">
+          {{ (d.date - today).days }} days
+        </div>
+        <div class="deadline-body">
+          <div class="deadline-firm">{{ d.firm }}</div>
+          <div class="deadline-program">{{ d.program }}</div>
+          <div class="deadline-meta">{{ d.type }} &middot; {{ d.eligible }} &middot; {{ d.date|fmtdate }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="hint">No upcoming deadlines in the tracked database from today's date, check the full deadline list for reference on next cycle's likely timing.</p>
+    {% endif %}
+    <div class="actions"><a class="btn secondary" href="/deadlines">See all deadlines →</a></div>
+  </div>
+
+  <div class="module-grid">
+    <a class="module-card" href="/deadlines">
+      <div class="icon">🗓️</div>
+      <h3>Deadline Radar</h3>
+      <p>Real application windows for MBB and Big 4, including the early diversity and sophomore program deadlines most students miss entirely. Live countdowns.</p>
+    </a>
+    <a class="module-card" href="/networking">
+      <div class="icon">🤝</div>
+      <h3>Networking Playbook</h3>
+      <p>Real techniques (like "leapfrog networking") from people who used them, outreach templates, coffee chat questions, and a personal contact tracker.</p>
+    </a>
+    <a class="module-card" href="/resume-check">
+      <div class="icon">📄</div>
+      <h3>Resume Check</h3>
+      <p>Paste your resume for an automated check against the most commonly cited mistakes: weak verbs, unquantified bullets, missing sections.</p>
+    </a>
+    <a class="module-card" href="/nontarget">
+      <div class="icon">🎯</div>
+      <h3>Non-Target Playbook</h3>
+      <p>Specific, sourced strategies for candidates without a target-school network or a top-of-range GPA.</p>
+    </a>
+    <a class="module-card" href="/stats">
+      <div class="icon">📊</div>
+      <h3>The Real Numbers</h3>
+      <p>Sourced acceptance rates, screening stats, and referral data, to understand why the process works the way it does.</p>
+    </a>
+    <a class="module-card" href="/tracker">
+      <div class="icon">✅</div>
+      <h3>My Tracker</h3>
+      <p>A simple personal tracker for the firms and programs you're applying to.</p>
+    </a>
+  </div>
+
+  <footer class="note">All data is real and sourced, see each page for citations. Recruiting deadlines shift every year, always verify against the firm's official page before relying on a date here. Nothing you enter in the trackers is stored beyond your browser session.</footer>
+</div>
+</body>
+</html>
