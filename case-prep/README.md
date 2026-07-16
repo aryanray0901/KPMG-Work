@@ -8,12 +8,18 @@ This is a different kind of tool from the rest of this repository. The other fiv
 
 ## What's included
 
-- **Case Library** (9 mock cases, one modeled after each target firm's known interview style, plus extras covering market sizing and a public-sector case): each case includes a prompt, common clarifying questions, a built-in timer, progressively revealed exhibits, a space to write your own structure and synthesis, and a model approach and synthesis to compare against afterward.
+- **Case Library** (9 mock cases, one modeled after each target firm's known interview style, plus extras covering market sizing and a public-sector case): each case includes a prompt, common clarifying questions, a built-in timer, progressively revealed exhibits, a space to write your own structure and synthesis, and an answer key with a model approach and synthesis to compare against afterward.
 - **Frameworks** (8 reference cards): profitability, market entry, M&A/synergies, growth strategy, pricing, operations, 3Cs, and Porter's Five Forces, each with when to use it, its structure, and a common pitfall.
-- **Fit & Behavioral Question Bank** (15 questions across 5 categories): motivation, leadership, teamwork, failure/resilience, and impact, each with specific STAR-method guidance and a space to draft and get feedback on your answer.
-- **Market Sizing Drill** (8 prompts): each with a guided estimation approach and a reasonable range to self-check against, since market sizing is about defensible reasoning, not a single correct number.
+- **Fit & Behavioral Question Bank** (15 questions across 5 categories): motivation, leadership, teamwork, failure/resilience, and impact, each with specific STAR-method guidance, an answer key with an example answer, and a space to draft and get feedback on your own answer. Every category also links to real preparation guides written by former or current consulting employees, see below.
+- **Market Sizing Drill** (8 prompts): each with an answer key containing a guided estimation approach and a reasonable range to self-check against, since market sizing is about defensible reasoning, not a single correct number.
 - **Math Drill**: timed, randomly generated mental math practice covering percentages, percent change, weighted averages, and quick multiplication, the kind of arithmetic that comes up constantly mid-case. Fully client-side with instant scoring.
 - **Firm Guides** (all 7 firms): a summary of each firm's known interview format, what to expect, and specific prep tips, based on publicly available information about each firm's process.
+
+## Answer keys and researched resources
+
+Every practice section has a click-to-reveal answer key rather than requiring a submission first: cases show the model approach and synthesis, market sizing prompts show the suggested estimation approach and a sanity-check range, and fit questions show an illustrative example answer.
+
+The example answers for fit questions are written specifically for this tool to illustrate STAR structure; they are not attributed to any real person. Separately, each fit question category links to real, publicly available preparation guides, several written or reviewed by named former consultants (credited where the source states this), covering McKinsey, BCG, Bain, and Big 4 firms specifically. These are a starting point for further research, not a guarantee of current interview format, firms revise their processes over time.
 
 ## The AI Coach (optional)
 
@@ -43,7 +49,7 @@ Then open `http://127.0.0.1:5100`.
 python tools/verify_content.py
 ```
 
-Checks that every case, framework, and firm guide has all required content fields, that all slugs are unique, that all 7 target firms are covered by at least one case, and that the rule-based feedback engine produces real output (including that its keyword extraction correctly filters filler words and surfaces genuine content terms). All 16 checks currently pass. Every page route and API endpoint was also tested directly against the running server, including the AI Coach's fallback behavior when given an invalid API key (confirmed to fail gracefully to the structured self-assessment rather than erroring out).
+Checks that every case, framework, and firm guide has all required content fields, that all slugs are unique, that all 7 target firms are covered by at least one case, that every fit question has an answer key and every category has properly-sourced resource links, and that the rule-based feedback engine produces real output (including that its keyword extraction correctly filters filler words and surfaces genuine content terms). All 20 checks currently pass. Every page route and API endpoint was also tested directly against the running server, including clicking through the answer key toggles with a real browser and confirming the AI Coach's fallback behavior when given an invalid API key (confirmed to fail gracefully to the structured self-assessment rather than erroring out).
 
 ## Design notes
 

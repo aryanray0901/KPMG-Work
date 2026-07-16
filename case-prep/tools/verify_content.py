@@ -64,6 +64,19 @@ total_fit_questions = sum(len(c["questions"]) for c in FIT_QUESTIONS)
 check("at least 10 fit/behavioral questions", total_fit_questions >= 10, f"got {total_fit_questions}")
 check("at least 5 market sizing prompts", len(MARKET_SIZING_PROMPTS) >= 5, f"got {len(MARKET_SIZING_PROMPTS)}")
 
+print("\n=== Answer key content ===")
+missing_examples = [f"{c['category']}: {q['q']}" for c in FIT_QUESTIONS for q in c["questions"] if not q.get("example_answer")]
+check("every fit question has an example answer", not missing_examples, f"missing: {missing_examples}")
+
+missing_resources = [c["category"] for c in FIT_QUESTIONS if not c.get("resources")]
+check("every fit category has researched resource links", not missing_resources, f"missing: {missing_resources}")
+
+bad_urls = [r["url"] for c in FIT_QUESTIONS for r in c.get("resources", []) if not r.get("url", "").startswith("http")]
+check("every resource link is a well-formed URL", not bad_urls, f"bad: {bad_urls}")
+
+missing_source = [r["title"] for c in FIT_QUESTIONS for r in c.get("resources", []) if not r.get("source")]
+check("every resource link credits its source", not missing_source, f"missing source: {missing_source}")
+
 print("\n=== Rule-based feedback engine ===")
 from app import rule_based_case_feedback, rule_based_fit_feedback, rule_based_sizing_feedback, extract_keywords
 

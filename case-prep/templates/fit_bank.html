@@ -21,17 +21,38 @@
 <div class="wrap">
   <h1>Fit &amp; Behavioral Questions</h1>
   <p class="sub">Organized by category. Click a question to draft an answer and get feedback, structured with the STAR
-  method (Situation, Task, Action, Result) in mind.</p>
+  method (Situation, Task, Action, Result) in mind. Each question has an answer key with an example answer, and each
+  category links to real preparation guides written by former or current consulting employees.</p>
 
   {% set gi = namespace(n=0) %}
   {% for cat in categories %}
   <div class="card">
     <h2>{{ cat.category }}</h2>
+
+    {% if cat.resources %}
+    <div class="resource-block">
+      <div class="resource-block-label">Researched further reading for this category</div>
+      {% for r in cat.resources %}
+      <div class="resource-link">
+        <a href="{{ r.url }}" target="_blank" rel="noopener noreferrer">{{ r.title }}</a>
+        <span class="resource-source">{{ r.source }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
     {% for item in cat.questions %}
     {% set gi.n = gi.n + 1 %}
     <div class="qa-item">
       <div class="q" style="cursor:pointer;" onclick="toggle({{ gi.n }})">{{ item.q }}</div>
       <div class="guidance">{{ item.guidance }}</div>
+
+      <button class="btn secondary answer-key-btn" onclick="toggleKey({{ gi.n }})">Show answer key</button>
+      <div id="answerkey-{{ gi.n }}" class="answer-key-panel" style="display:none;">
+        <div class="answer-key-label">Example answer (illustrative, written for this tool, not a real candidate's story)</div>
+        <p class="example-answer-text">{{ item.example_answer }}</p>
+      </div>
+
       <div id="practice-{{ gi.n }}" style="display:none;">
         <textarea id="answer-{{ gi.n }}" placeholder="Draft your answer here..."></textarea>
         <div class="provider-row" style="display:flex;gap:10px;margin:10px 0;">
@@ -54,6 +75,11 @@
 <script>
 function toggle(n) {
   const el = document.getElementById("practice-" + n);
+  el.style.display = el.style.display === "none" ? "block" : "none";
+}
+
+function toggleKey(n) {
+  const el = document.getElementById("answerkey-" + n);
   el.style.display = el.style.display === "none" ? "block" : "none";
 }
 

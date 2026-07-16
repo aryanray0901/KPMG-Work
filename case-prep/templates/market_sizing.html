@@ -33,6 +33,16 @@
     <textarea id="sizing-text" placeholder="Walk through your structure and land on a number..."></textarea>
   </div>
 
+  <div class="card">
+    <button class="btn secondary answer-key-btn" onclick="toggleKey()">Show answer key</button>
+    <div id="answerkey-panel" class="answer-key-panel" style="display:none;">
+      <div class="answer-key-label">Suggested approach</div>
+      <p class="example-answer-text">{{ prompt.approach }}</p>
+      <div class="answer-key-label" style="margin-top:12px;">Sanity check range</div>
+      <p class="example-answer-text">{{ prompt.range_hint }}</p>
+    </div>
+  </div>
+
   <div class="ai-panel">
     <h2>Get feedback</h2>
     <div class="provider-row">
@@ -54,6 +64,12 @@
 
 <script>
 const IDX = {{ idx }};
+
+function toggleKey() {
+  const el = document.getElementById("answerkey-panel");
+  el.style.display = el.style.display === "none" ? "block" : "none";
+}
+
 async function getFeedback() {
   const text = document.getElementById("sizing-text").value.trim();
   const provider = document.getElementById("provider-select").value;
