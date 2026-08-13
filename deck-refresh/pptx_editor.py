@@ -2510,7 +2510,7 @@ def _is_cutoff_error(message: str) -> bool:
 def _friendly_openai_error(message: str) -> str:
     lowered = message.casefold()
     if "401" in lowered or "invalid_api_key" in lowered or "incorrect api key" in lowered:
-        return "The OpenAI API key was rejected. Replace OPENAI_API_KEY in .env and restart Deck Refresh."
+        return "The AI credential was rejected. Update the local API key or the server environment, then restart Deck Refresh."
     if "429" in lowered or "rate limit" in lowered or "quota" in lowered:
         return "The OpenAI account hit a rate or billing limit. Check API billing, then retry."
     if _is_cutoff_error(message):

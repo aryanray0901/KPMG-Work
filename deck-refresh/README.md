@@ -31,7 +31,7 @@ Python, Flask, python-pptx, openpyxl, pandas, RapidFuzz for fuzzy matching, Libr
 - **Mac:** double-click `Start on Mac.command`
 - **Windows:** double-click `Start on Windows.bat`
 
-The first run installs dependencies automatically and opens the application in a browser. The 1:1 test files and the fictional KPMG-styled sample deck are included in `sample_files/`.
+The first run installs dependencies automatically, privately prompts for an OpenAI API key when needed, and opens the application in a browser. The key is stored only in the local `.env` file. Run `Update API Key on Windows.bat` or `Update API Key on Mac.command` whenever a key is revoked. The 1:1 test files and the fictional KPMG-styled sample deck are included in `sample_files/`.
 
 Manual setup:
 ```bash

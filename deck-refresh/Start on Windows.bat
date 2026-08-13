@@ -69,12 +69,18 @@ if errorlevel 1 (
 
 "%VENV_PY%" -c "from dotenv import load_dotenv; import os,sys; load_dotenv(); sys.exit(0 if os.getenv('OPENAI_API_KEY') else 1)" >nul 2>nul
 if errorlevel 1 (
-  echo ERROR: The bundled OpenAI API key could not be loaded from .env.
-  echo Keep the .env file in the same folder as this launcher.
-  pause
-  exit /b 1
+  echo No local OpenAI API key is configured yet.
+  "%VENV_PY%" "%~dp0configure_api_key.py"
+  if errorlevel 1 (
+    echo.
+    echo ERROR: Deck Refresh needs an API key for AI editing.
+    echo Run "Update API Key on Windows.bat" when you are ready.
+    pause
+    exit /b 1
+  )
 )
 echo OpenAI API key loaded.
+echo To replace a revoked key, run "Update API Key on Windows.bat".
 echo.
 
 echo Starting Deck Refresh at http://127.0.0.1:5050

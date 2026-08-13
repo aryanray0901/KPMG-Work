@@ -69,12 +69,18 @@ else
 fi
 
 if ! ./venv/bin/python3 -c "from dotenv import load_dotenv; import os,sys; load_dotenv(); sys.exit(0 if os.getenv('OPENAI_API_KEY') else 1)" >/dev/null 2>&1; then
-  echo "ERROR: The bundled OpenAI API key could not be loaded from .env."
-  echo "Keep the .env file in the same folder as this launcher."
-  read -p "Press Enter to close this window..."
-  exit 1
+  echo "No local OpenAI API key is configured yet."
+  ./venv/bin/python3 configure_api_key.py
+  if [ $? -ne 0 ]; then
+    echo ""
+    echo "ERROR: Deck Refresh needs an API key for AI editing."
+    echo "Run 'Update API Key on Mac.command' when you are ready."
+    read -p "Press Enter to close this window..."
+    exit 1
+  fi
 fi
 echo "OpenAI API key loaded."
+echo "To replace a revoked key, run 'Update API Key on Mac.command'."
 echo ""
 
 echo "Starting Deck Refresh at http://127.0.0.1:5050"
