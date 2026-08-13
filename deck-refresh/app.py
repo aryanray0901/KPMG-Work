@@ -35,6 +35,7 @@ from dotenv import load_dotenv
 from builtin_preview import render_pptx as render_pptx_builtin
 from builder_ops import LAYOUTS, create_blank_deck, layout_operations, wizard
 from chart_contrast import ensure_chart_contrast
+import storage as blob_storage
 from replacement_engine import (
     ReplacementError,
     apply_selected_deck_replacements,
@@ -1386,6 +1387,76 @@ def _load_session_meta(sess_dir):
         return json.load(f)
 
 
+# ---------------------------------------------------------------------------
+# BLOB-BACKED SESSION PERSISTENCE (Vercel only)
+#
+# Vercel Functions don't share a persistent /tmp across invocations, so a
+# session directory created in one request may not exist when the next
+# request for the same session arrives. These helpers mirror a session's
+# local working directory to Vercel Blob storage so it survives regardless
+# of which container ends up serving each request. Locally, or when Blob
+# storage isn't configured, these are no-ops and behavior is unchanged.
+# ---------------------------------------------------------------------------
+
+def _blob_prefix(sid):
+    return f"sessions/{sid}/"
+
+
+def _hydrate_session(sid):
+    """Pull a session's files from Blob storage into local disk if missing."""
+    if not (IS_VERCEL and blob_storage.ENABLED):
+        return
+    local_dir = os.path.join(SESSIONS_DIR, sid)
+    marker = os.path.join(local_dir, ".hydrated")
+    if os.path.exists(marker):
+        return  # this container already has this session's files
+    blobs = blob_storage.list_prefix(_blob_prefix(sid))
+    if not blobs:
+        return  # unknown session id; normal 404 handling takes over
+    prefix = _blob_prefix(sid)
+    for item in blobs:
+        rel = item.get("pathname", "")[len(prefix):]
+        if not rel:
+            continue
+        local_path = os.path.join(local_dir, rel)
+        if not os.path.exists(local_path):
+            blob_storage.download_to(item["url"], local_path)
+    os.makedirs(local_dir, exist_ok=True)
+    open(marker, "w").close()
+
+
+def _persist_session(sid):
+    """Mirror every file in a session's local directory up to Blob storage."""
+    if not (IS_VERCEL and blob_storage.ENABLED):
+        return
+    local_dir = os.path.join(SESSIONS_DIR, sid)
+    if not os.path.isdir(local_dir):
+        return
+    prefix = _blob_prefix(sid)
+    for root, _dirs, files in os.walk(local_dir):
+        for name in files:
+            if name == ".hydrated":
+                continue
+            local_path = os.path.join(root, name)
+            rel = os.path.relpath(local_path, local_dir).replace(os.sep, "/")
+            blob_storage.put_file(prefix + rel, local_path)
+
+
+@app.before_request
+def _hydrate_session_from_blob():
+    sid = (request.view_args or {}).get("sid")
+    if sid:
+        _hydrate_session(sid)
+
+
+@app.after_request
+def _persist_session_to_blob(response):
+    sid = (request.view_args or {}).get("sid")
+    if sid and request.method == "POST" and response.status_code < 400:
+        _persist_session(sid)
+    return response
+
+
 @app.route("/", methods=["GET"])
 def index():
     return render_template("index.html")
@@ -1632,6 +1703,7 @@ def replace_one_to_one():
         replacement_mapping_summary={key: value for key, value in mapping_summary.items() if key != "entries"},
         replacement_reviewed=False,
     )
+    _persist_session(sid)
     return redirect(url_for("replacement_review", sid=sid))
 
 
@@ -1792,6 +1864,7 @@ def process():
         json.dump(period_replacements, f)
     _save_session_meta(sess_dir, file_type=file_type, original_filename=primary_file.filename,
                         source_count=len(source_pairs))
+    _persist_session(sid)
 
     return redirect(url_for("review", sid=sid))
 
@@ -2081,6 +2154,7 @@ def _create_editor_session(source_path, original_filename):
     )
     with open(os.path.join(sess_dir, "editor_chat.json"), "w", encoding="utf-8") as f:
         json.dump([], f)
+    _persist_session(sid)
     return sid
 
 
