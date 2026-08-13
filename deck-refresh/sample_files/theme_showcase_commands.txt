@@ -1,0 +1,17 @@
+Theme and color showcase commands
+
+Apply the KPMG Blue theme to the entire deck.
+
+Apply the Executive Dark theme to the entire deck.
+
+Apply the Performance Green theme to slide 3.
+
+Use a navy, teal, and light gray palette on slide 4 with a white background.
+
+Change the background to black and body text to white on slide 2.
+
+Change all chart colors to green, dark blue, and light blue.
+
+Change every orange shape to green across the entire deck.
+
+Apply a custom theme to the entire deck with primary #123456, accent #ABCDEF, and background #F7F9FC. Preserve logos and status colors.

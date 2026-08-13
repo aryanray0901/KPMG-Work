@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+sessions
+test_outputs
+screenshots
+tools
+sample_files
+__pycache__
+*.pyc
+*.zip

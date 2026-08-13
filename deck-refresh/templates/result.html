@@ -3,18 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Result | KPMG Deck Refresh</title>
+<title>Result | Deck Refresh</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 {% if not rendering_ok %}<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>{% endif %}
 </head>
 <body class="result-page">
-<div class="topbar"><div class="topbar-inner"><span class="product-logo">KPMG</span><span class="brand-name">Deck Refresh</span><span class="tag">Internal demo | fictional data</span></div></div>
+<div class="topbar"><div class="topbar-inner"><span class="product-logo">DR</span><span class="brand-name">Deck Refresh</span><span class="tag">Presentation data workspace</span></div></div>
 <div class="wrap viewer-wrap">
   <div class="result-heading">
     <div>
+      {% if replacement_mode %}
+      <h1>1:1 replacement complete.</h1>
+      {% else %}
       <h1>{{ applied_count }} number{{ 's' if applied_count != 1 else '' }} updated.</h1>
+      {% endif %}
       <p class="sub">
-        {% if rendering_ok %}
+        {% if replacement_mode %}
+          {{ replacement_report.profile }} matched {{ data_filename }}. Deck Refresh preserved {{ replacement_report.slide_count }} slides, {{ replacement_report.charts }} native charts, {{ replacement_report.tables }} native tables, all object positions, and the original theme.
+        {% elif rendering_ok %}
           Two synchronized PowerPoint viewers. Use either deck's controls, a thumbnail, your arrow keys, or the shared controls to move both presentations together.
         {% else %}
           Compare the original and updated {{ 'presentation' if file_type == 'pptx' else 'spreadsheet' }} below.
@@ -23,11 +29,22 @@
       </p>
     </div>
     <div class="actions result-actions">
+      {% if file_type == 'pptx' %}<a class="btn" href="/editor/from-result/{{ sid }}/updated">Edit in AI workspace</a>{% endif %}
       <a class="btn" href="/download/{{ sid }}/updated">Download updated</a>
       <a class="btn secondary" href="/download/{{ sid }}/original">Download original</a>
       <a class="btn secondary" href="/">Start over</a>
     </div>
   </div>
+
+  {% if replacement_mode %}
+  <div class="replacement-result-grid">
+    <div class="replacement-result-stat"><b>{{ replacement_report.source_sheets }}</b><span>source sheets read</span></div>
+    <div class="replacement-result-stat"><b>{{ replacement_report.source_rows }}</b><span>source rows mapped</span></div>
+    <div class="replacement-result-stat"><b>{{ replacement_report.chart_points }}</b><span>chart points refreshed</span></div>
+    <div class="replacement-result-stat"><b>{{ replacement_report.table_cells }}</b><span>table cells checked</span></div>
+    <div class="replacement-result-stat"><b>{{ replacement_report.text_updates }}</b><span>text fields updated</span></div>
+  </div>
+  {% endif %}
 
   {% if rendering_ok %}
   <section class="sync-control-bar" aria-label="Synchronized presentation controls">

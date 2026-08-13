@@ -1,0 +1,20 @@
+Theme and color regression report
+
+6/6 theme editor checks passed.
+
+Verified:
+- Eight named theme presets.
+- Custom primary, secondary, accent, background, title, and body colors.
+- Whole-deck and single-slide scope.
+- Editable chart series recoloring.
+- Editable table header and band recoloring.
+- Slide background and text recoloring.
+- Logos and pictures preserved.
+- Status colors preserved by default.
+- Invalid slide requests fail without changing the PowerPoint.
+- Themed 30-slide PowerPoint reopens without repair warnings.
+
+Existing regression checks also passed:
+- 18/18 30-slide conversational editor tests.
+- Chat slide-command suite.
+- Preview recovery after a failed render.

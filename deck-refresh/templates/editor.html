@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PowerPoint Editor | Deck Refresh</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="editor-page">
+<div class="topbar">
+  <div class="topbar-inner editor-topbar-inner">
+    <div class="topbar-brand"><span class="product-logo">DR</span><span class="brand-name">Deck Refresh</span><span class="tag">AI PowerPoint Editor</span></div>
+    <div class="editor-file-actions">
+      <a class="btn secondary compact" href="/">Home</a>
+      <a class="btn compact" href="/editor/download/{{ sid }}">Download PowerPoint</a>
+    </div>
+  </div>
+</div>
+
+<main class="editor-shell" id="editor-app" data-sid="{{ sid }}">
+  <header class="editor-toolbar">
+    <div class="editor-file-name">
+      <span class="ppt-app-icon">P</span>
+      <div><strong>{{ filename }}</strong><span id="save-status">Version {{ state.version + 1 }}</span></div>
+    </div>
+    <div class="editor-toolbar-actions">
+      <button class="tool-btn" data-action="undo" id="undo-btn" {{ 'disabled' if not state.can_undo }}>Undo</button>
+      <button class="tool-btn" data-action="redo" id="redo-btn" {{ 'disabled' if not state.can_redo }}>Redo</button>
+      <button class="tool-btn" data-action="retry_preview">Retry preview</button>
+      <span class="toolbar-divider"></span>
+      <button class="tool-btn primary-tool" type="button" id="new-slide-button">New slide</button>
+      <button class="tool-btn" data-action="duplicate_slide">Duplicate</button>
+      <button class="tool-btn danger" data-action="delete_slide">Delete</button>
+      <button class="tool-btn" data-action="move_left">Move left</button>
+      <button class="tool-btn" data-action="move_right">Move right</button>
+    </div>
+  </header>
+
+  <section class="editor-grid">
+    <aside class="editor-thumbnails" aria-label="Slides">
+      <div class="thumbnail-header"><strong>Slides</strong><span id="slide-total">{{ state.slide_count }}</span></div>
+      <div id="thumbnail-list"></div>
+    </aside>
+
+    <section class="editor-stage-panel">
+      <div class="editor-stage-top">
+        <span id="slide-label">Slide {{ state.selected_slide }} of {{ state.slide_count }}</span>
+        <span class="renderer-label" id="renderer-label">{{ state.render_engine or 'Preview renderer unavailable' }}</span>
+      </div>
+      <div class="editor-stage" id="editor-stage">
+        <img id="editor-slide-image" alt="Current PowerPoint slide" {{ 'hidden' if not state.rendering_ok }}>
+        <div class="editor-loading" id="editor-loading" hidden>Updating PowerPoint…</div>
+        <div class="preview-unavailable" id="preview-unavailable" {{ 'hidden' if state.rendering_ok }}>
+          <strong>Slide preview is unavailable.</strong>
+          <span id="preview-help">{{ state.render_help }}</span>
+          <button class="tool-btn" type="button" data-action="retry_preview">Retry preview</button>
+        </div>
+      </div>
+      <div class="editor-stage-nav">
+        <button class="tool-btn" id="previous-slide">Previous</button>
+        <input id="zoom-slider" type="range" min="60" max="180" value="100" step="10" aria-label="Preview zoom">
+        <span id="zoom-label">100%</span>
+        <button class="tool-btn" id="next-slide">Next</button>
+      </div>
+    </section>
+
+    <aside class="right-panel">
+      <div class="right-panel-tabs" role="tablist" aria-label="Editor panel">
+        <button type="button" id="design-edit-tab" class="active" role="tab" aria-selected="true" aria-controls="design-edit-pane" tabindex="0" data-right-tab="design">Design and edit</button>
+        <button type="button" id="edit-ai-tab" role="tab" aria-selected="false" aria-controls="edit-ai-pane" tabindex="-1" data-right-tab="ai">Edit with AI</button>
+      </div>
+      <section class="inspector-panel" id="design-edit-pane" role="tabpanel" aria-labelledby="design-edit-tab" data-right-pane="design">
+        <div class="inspector-header"><div><strong>Design and edit</strong><span>Native PowerPoint controls</span></div><button class="tool-btn compact" type="button" id="inspector-toggle">Hide</button></div>
+        <div class="inspector-body" id="inspector-body">
+          <details open><summary>Theme</summary><div class="inspector-section">
+            <label class="control-label" for="theme-preset">Choose theme</label>
+            <select id="theme-preset" class="theme-select"><option>Deck Refresh Blue</option><option>Executive Dark</option><option>Performance Green</option><option>Warm Neutral</option><option>Ocean</option><option>Purple</option><option>Monochrome</option><option>High Contrast</option><option value="Custom">Custom colors</option></select>
+            <div id="custom-theme-colors" class="custom-theme-colors" hidden><label>Primary<input id="theme-primary" type="color" value="#00338D"></label><label>Accent<input id="theme-accent" type="color" value="#00A651"></label><label>Background<input id="theme-background" type="color" value="#F7F9FC"></label></div>
+            <div class="theme-scope-actions"><button type="button" id="apply-theme-slide">Apply to this slide</button><button type="button" id="apply-theme-deck">Apply to whole deck</button></div>
+          </div></details>
+          <details open><summary>Chart editor</summary><div class="inspector-section">
+            <div class="new-slide-grid key-slide-grid">
+              <button type="button" data-chart-type="column">Blank Column</button><button type="button" data-chart-type="bar">Blank Bar</button>
+              <button type="button" data-chart-type="line">Blank Line</button><button type="button" data-chart-type="pie">Blank Pie</button>
+              <button type="button" data-chart-type="area">Blank Area</button><button type="button" data-chart-type="waterfall">Blank Waterfall</button>
+              <button type="button" data-chart-type="scatter">Blank Scatter</button>
+            </div>
+          </div></details>
+        </div>
+      </section>
+      <section class="chat-panel" id="edit-ai-pane" role="tabpanel" aria-labelledby="edit-ai-tab" data-right-pane="ai" hidden>
+      <div class="chat-header">
+        <div><strong>Edit with AI</strong><span>Ask for any slide change</span></div>
+        <span class="api-status {{ 'ready' if state.openai_ready else 'missing' }}">{{ 'API ready' if state.openai_ready else 'API key needed' }}</span>
+      </div>
+      {% if not state.openai_ready %}
+      <div class="api-help">Add an AI credential to the server environment, then restart the app.</div>
+      {% endif %}
+      <div class="chat-messages" id="chat-messages">
+        {% if history %}
+          {% for item in history %}
+          <div class="chat-bubble {{ item.role }}">{{ item.content }}</div>
+          {% endfor %}
+        {% else %}
+          <div class="chat-bubble assistant">Tell me what to change. Examples: “Make slide 3 more executive,” “delete slide 5,” “add a risks slide,” or “change every Q3 reference to Q4.”</div>
+        {% endif %}
+      </div>
+      <form class="chat-composer" id="chat-form" enctype="multipart/form-data">
+        <textarea id="chat-input" rows="4" placeholder="Describe the edit…"></textarea>
+        <div class="chat-attachment-row">
+          <label class="attachment-button" for="chat-attachments">Attach image or data</label>
+          <input id="chat-attachments" type="file" multiple accept=".png,.jpg,.jpeg,.webp,.csv,.tsv,.xlsx,.xlsm,.txt,.md,.json">
+          <span id="attachment-label">No attachments</span>
+        </div>
+        <div class="chat-composer-footer">
+          <span id="selected-slide-note">Editing slide {{ state.selected_slide }}</span>
+          <button class="btn compact" id="send-chat" type="submit">Apply edit</button>
+        </div>
+      </form>
+      </section>
+    </aside>
+  </section>
+</main>
+
+<div class="builder-modal" id="builder-modal" {{ '' if open_builder else 'hidden' }}>
+  <div class="builder-dialog chart-builder-dialog" role="dialog" aria-modal="true" aria-labelledby="builder-title">
+    <header><div><strong id="builder-title">Add an editable chart</strong><span>Choose the chart, data source, and where it should go.</span></div><button type="button" class="modal-close" id="builder-close">×</button></header>
+    <form id="builder-form" enctype="multipart/form-data">
+      <input type="hidden" name="layout" id="builder-layout" value="bar_chart">
+      <section class="chart-builder-body">
+        <label class="builder-control">Chart type<select name="chart_type" id="builder-chart-type"><option value="column">Column chart</option><option value="bar">Bar chart</option><option value="line">Line chart</option><option value="pie">Pie chart</option><option value="area">Area chart</option><option value="waterfall">Waterfall chart</option><option value="scatter">Scatter plot</option></select></label>
+        <fieldset class="data-source-choice chart-placement-choice"><legend>Placement</legend><label><input type="radio" name="placement" value="new" checked><span><strong>New slide</strong><small>Create a clean chart slide after the selected slide.</small></span></label><label><input type="radio" name="placement" value="current"><span><strong>Current slide</strong><small>Find open space and reflow content without covering slide elements.</small></span></label></fieldset>
+        <fieldset class="data-source-choice"><legend>Data source</legend><label><input type="radio" name="data_mode" value="blank" checked><span><strong>Blank chart</strong><small>Create the native chart now and edit its embedded data later.</small></span></label><label><input type="radio" name="data_mode" value="upload"><span><strong>Use Excel data</strong><small>Detect headers, categories, X axis, Y series, dates, percentages, and currency.</small></span></label></fieldset>
+        <label class="builder-control" id="chart-data-control" hidden>Excel or CSV file<input type="file" id="chart-data-file" accept=".xlsx,.xls,.xlsm,.csv,.tsv"><small id="chart-data-status">Choose one worksheet file.</small></label>
+        <label class="builder-control">Chart title, optional<input type="text" name="title" id="builder-slide-title" placeholder="Leave empty for a completely blank chart"></label>
+      </section>
+      <footer><button type="button" class="tool-btn" id="builder-cancel">Cancel</button><button type="submit" class="btn compact">Add chart</button></footer>
+    </form>
+  </div>
+</div>
+
+<div class="guided-modal" id="guided-modal" hidden>
+  <div class="guided-dialog" role="dialog" aria-modal="true" aria-labelledby="guided-title">
+    <header><div><strong id="guided-title">Edit PowerPoint</strong><span id="guided-description"></span></div><button type="button" class="modal-close" id="guided-close">×</button></header>
+    <form id="guided-form">
+      <div class="guided-fields" id="guided-fields"></div>
+      <div class="guided-template"><span>Command</span><strong id="guided-command-preview"></strong></div>
+      <footer><button type="button" class="tool-btn" id="guided-cancel">Cancel</button><button type="submit" class="btn compact">Apply edit</button></footer>
+    </form>
+  </div>
+</div>
+
+<script>
+window.DECK_EDITOR_STATE = {{ state|tojson }};
+</script>
+<script src="{{ url_for('static', filename='editor.js') }}"></script>
+</body>
+</html>

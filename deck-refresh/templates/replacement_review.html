@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Validate Replacement | Deck Refresh</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="replacement-review-page">
+<div class="topbar"><div class="topbar-inner"><span class="product-logo">DR</span><span class="brand-name">Deck Refresh</span><span class="tag">Structure validation</span></div></div>
+<main class="wrap review-wrap">
+  <form id="replacement-approval-form" action="{{ url_for('replacement_apply', sid=sid) }}" method="post">
+  <div class="review-heading">
+    <div>
+      <span class="workflow-badge">VALIDATE BEFORE APPLYING</span>
+      <h1>Review the presentation structure.</h1>
+      <p class="sub">{{ original_filename }} matched {{ data_filename }}. Review the native data objects, select the proposed changes you want, then apply only those rows.</p>
+    </div>
+    <button class="btn" type="submit" name="approval" value="approve_all">Approve all {{ summary.changed_fields }} changes</button>
+  </div>
+
+  <section class="validation-banner {{ 'passed' if structure_validation.passed else 'failed' }}" aria-label="Validation result">
+    <div class="validation-icon">{{ '✓' if structure_validation.passed else '!' }}</div>
+    <div><strong>{{ 'Structure validation passed' if structure_validation.passed else 'Structure validation failed' }}</strong><span>Slide count, object geometry, native object types, theme, and master were checked before approval.</span></div>
+  </section>
+
+  {% if report.match_mode == 'label_and_structure' %}
+  <section class="relative-match-banner" aria-label="Relative matching result">
+    <div><strong>Relative matching active</strong><span>{{ report.analysis_message }}</span></div>
+    <div class="relative-match-stats"><b>{{ summary.relative_match_count or 0 }} proposed</b><b>{{ summary.review_confidence_count or 0 }} need closer review</b></div>
+  </section>
+  {% endif %}
+
+  <section class="structure-summary" aria-label="Presentation data structure summary">
+    <div><b>{{ deck_structure.slide_count }}</b><span>slides</span></div>
+    <div><b>{{ deck_structure.shapes }}</b><span>slide objects</span></div>
+    <div><b>{{ deck_structure.charts }}</b><span>native charts</span></div>
+    <div><b>{{ deck_structure.tables }}</b><span>native tables</span></div>
+    <div><b>{{ deck_structure.figures }}</b><span>KPI figures</span></div>
+    <div><b>{{ summary.changed_fields }}</b><span>proposed changes</span></div>
+  </section>
+
+  <section class="validation-checks" aria-label="Structural safeguards">
+    {% for check in structure_validation.checks %}
+    <div class="validation-check">
+      <span class="check-state">{{ '✓' if check.passed else '!' }}</span>
+      <div><strong>{{ check.name }}</strong><small>{{ check.original }} → {{ check.updated }}</small></div>
+      <b>{{ 'Passed' if check.passed else 'Failed' }}</b>
+    </div>
+    {% endfor %}
+  </section>
+
+  <div class="review-tabs" role="tablist" aria-label="Validation views">
+    <button class="review-tab active" type="button" data-review-tab="structure" role="tab" aria-selected="true">Presentation structure</button>
+    <button class="review-tab" type="button" data-review-tab="changes" role="tab" aria-selected="false">Proposed changes <span>{{ summary.changed_fields }}</span></button>
+  </div>
+
+  <section class="review-panel active" data-review-panel="structure">
+    <div class="structure-toolbar">
+      <div><strong>Editable PowerPoint data objects</strong><span>{{ deck_structure.slide_width_inches }} × {{ deck_structure.slide_height_inches }} inches. Charts and tables remain native.</span></div>
+      <label>Filter slides <input id="structure-filter" type="search" placeholder="Slide, chart, table, KPI, or object"></label>
+    </div>
+    <div id="structure-groups">
+      {% for slide in deck_structure.slides %}
+      <details class="structure-slide" data-structure-search="slide {{ slide.slide }} {{ slide.title|lower }} {% for object in slide.objects %}{{ object.type|lower }} {{ object.name|lower }} {{ object.details|lower }} {% endfor %}" {{ 'open' if slide.mapped_changes else '' }}>
+        <summary>
+          <div><span>Slide {{ slide.slide }}</span><strong>{{ slide.title }}</strong></div>
+          <div class="slide-structure-counts">
+            {% if slide.charts %}<em>{{ slide.charts }} chart{{ 's' if slide.charts != 1 else '' }}</em>{% endif %}
+            {% if slide.tables %}<em>{{ slide.tables }} table{{ 's' if slide.tables != 1 else '' }}</em>{% endif %}
+            {% if slide.figures %}<em>{{ slide.figures }} KPI{{ 's' if slide.figures != 1 else '' }}</em>{% endif %}
+            <b>{{ slide.mapped_changes }} changes</b>
+          </div>
+        </summary>
+        {% if slide.objects %}
+        <div class="structure-table-wrap">
+          <table class="structure-table">
+            <thead><tr><th>Native object</th><th>Detected structure</th><th>Current PowerPoint data</th><th>Proposed changes</th><th>Status</th></tr></thead>
+            <tbody>
+            {% for object in slide.objects %}
+              <tr>
+                <td><span class="object-type {{ object.type|lower }}">{{ object.type }}</span><small>{{ object.name }}</small></td>
+                <td>{{ object.structure }}</td>
+                <td>{{ object.details }}</td>
+                <td><b>{{ object.mapped_changes }}</b></td>
+                <td><span class="native-status">Native and editable</span></td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="empty-structure">No chart, table, KPI, or data-linked text objects were detected on this slide.</p>
+        {% endif %}
+      </details>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="review-panel" data-review-panel="changes" hidden>
+    <section class="replacement-result-grid review-stats" aria-label="Replacement summary">
+      <div class="replacement-result-stat"><b>{{ summary.changed_fields }}</b><span>visible mappings</span></div>
+      <div class="replacement-result-stat"><b>{{ summary.slides_changed }}</b><span>slides affected</span></div>
+      <div class="replacement-result-stat"><b>{{ summary.chart_changes }}</b><span>chart points</span></div>
+      <div class="replacement-result-stat"><b>{{ summary.table_changes }}</b><span>table cells</span></div>
+      <div class="replacement-result-stat"><b>{{ summary.figure_changes + summary.text_changes }}</b><span>figures and text</span></div>
+    </section>
+
+    <div class="mapping-toolbar">
+      <div><strong>Old value → new value</strong><span>Grouped by slide and native object.</span></div>
+      <div class="selection-controls">
+        <button type="button" id="select-all-mappings">Select all</button>
+        <button type="button" id="clear-all-mappings">Clear</button>
+        <b id="selected-mapping-count">{{ summary.changed_fields }} selected</b>
+      </div>
+      <label>Filter changes <input id="mapping-filter" type="search" placeholder="Slide, object, label, or value"></label>
+    </div>
+
+    <div id="mapping-groups">
+      {% for group in groups %}
+      <section class="remap-slide" data-search="slide {{ group.slide }} {{ group.slide_title|lower }}">
+        <header>
+          <div><span>Slide {{ group.slide }}</span><h2>{{ group.slide_title }}</h2></div>
+          <b>{{ group.entries|length }} change{{ 's' if group.entries|length != 1 else '' }}</b>
+        </header>
+        <div class="remap-table-wrap">
+          <table class="remap-table">
+            <thead><tr><th class="selection-column"><span class="sr-only">Apply</span></th><th>Object</th><th>Field</th><th>Original</th><th class="arrow-column">→</th><th>Replacement</th></tr></thead>
+            <tbody>
+            {% for item in group.entries %}
+              <tr data-mapping-row data-search="{{ (item.object_type ~ ' ' ~ item.object_name ~ ' ' ~ item.label ~ ' ' ~ item.old_value ~ ' ' ~ item.new_value)|lower }}">
+                <td class="selection-column"><input class="mapping-checkbox" type="checkbox" name="mapping_id" value="{{ item.id }}" checked aria-label="Apply {{ item.object_type }} change on slide {{ item.slide }}"></td>
+                <td><span class="object-type {{ item.object_type|lower }}">{{ item.object_type }}</span><small>{{ item.object_name }}</small></td>
+                <td>{{ item.label }}{% if item.source_label %}<small class="match-source">Matched from {{ item.source_sheet }}: {{ item.source_label }}<br>{{ item.match_method }} · {{ item.match_confidence }} confidence · {{ item.match_score }}</small>{% endif %}</td>
+                <td class="old-value">{{ item.old_value }}</td>
+                <td class="arrow-column">→</td>
+                <td class="new-value">{{ item.new_value }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      {% endfor %}
+      {% if not groups %}
+      <div class="no-relative-changes"><strong>No comparable numeric fields found.</strong><span>The presentation structure still passed validation. Add numeric values with worksheet headers or PowerPoint labels to produce relative replacements.</span></div>
+      {% endif %}
+    </div>
+  </section>
+
+  <div class="blanket-approval">
+    <div><strong>Selected approval</strong><span>Only checked rows are applied. Unchecked values stay exactly as they are in the uploaded presentation.</span></div>
+    <button class="btn" type="submit" name="approval" value="approve_selected">Apply selected changes</button>
+  </div>
+  <div class="review-actions"><a class="btn secondary" href="{{ url_for('index') }}">Cancel</a></div>
+  </form>
+</main>
+<script>
+document.querySelectorAll("[data-review-tab]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const target = button.dataset.reviewTab;
+    document.querySelectorAll("[data-review-tab]").forEach((item) => {
+      const active = item === button;
+      item.classList.toggle("active", active);
+      item.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    document.querySelectorAll("[data-review-panel]").forEach((panel) => {
+      const active = panel.dataset.reviewPanel === target;
+      panel.classList.toggle("active", active);
+      panel.hidden = !active;
+    });
+  });
+});
+
+const structureFilter = document.getElementById("structure-filter");
+structureFilter.addEventListener("input", () => {
+  const query = structureFilter.value.trim().toLowerCase();
+  document.querySelectorAll(".structure-slide").forEach((section) => {
+    const match = !query || section.dataset.structureSearch.includes(query);
+    section.hidden = !match;
+    if (query && match) section.open = true;
+  });
+});
+
+const mappingFilter = document.getElementById("mapping-filter");
+mappingFilter.addEventListener("input", () => {
+  const query = mappingFilter.value.trim().toLowerCase();
+  document.querySelectorAll(".remap-slide").forEach((section) => {
+    let visibleRows = 0;
+    section.querySelectorAll("[data-mapping-row]").forEach((row) => {
+      const match = !query || `${section.dataset.search} ${row.dataset.search}`.includes(query);
+      row.hidden = !match;
+      if (match) visibleRows += 1;
+    });
+    section.hidden = visibleRows === 0;
+  });
+});
+
+const mappingCheckboxes = Array.from(document.querySelectorAll(".mapping-checkbox"));
+const selectedMappingCount = document.getElementById("selected-mapping-count");
+const refreshSelectionCount = () => {
+  const count = mappingCheckboxes.filter((checkbox) => checkbox.checked).length;
+  selectedMappingCount.textContent = `${count} selected`;
+};
+mappingCheckboxes.forEach((checkbox) => checkbox.addEventListener("change", refreshSelectionCount));
+document.getElementById("select-all-mappings").addEventListener("click", () => {
+  mappingCheckboxes.forEach((checkbox) => { checkbox.checked = true; });
+  refreshSelectionCount();
+});
+document.getElementById("clear-all-mappings").addEventListener("click", () => {
+  mappingCheckboxes.forEach((checkbox) => { checkbox.checked = false; });
+  refreshSelectionCount();
+});
+refreshSelectionCount();
+</script>
+</body>
+</html>
