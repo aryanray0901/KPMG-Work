@@ -1410,7 +1410,10 @@ def _hydrate_session(sid):
     marker = os.path.join(local_dir, ".hydrated")
     if os.path.exists(marker):
         return  # this container already has this session's files
-    blobs = blob_storage.list_prefix(_blob_prefix(sid))
+    try:
+        blobs = blob_storage.list_prefix(_blob_prefix(sid))
+    except Exception:
+        return  # listing failed; fall through to the local 404 path below
     if not blobs:
         return  # unknown session id; normal 404 handling takes over
     prefix = _blob_prefix(sid)
@@ -1420,7 +1423,12 @@ def _hydrate_session(sid):
             continue
         local_path = os.path.join(local_dir, rel)
         if not os.path.exists(local_path):
-            blob_storage.download_to(item["url"], local_path)
+            try:
+                blob_storage.download_to(item["url"], local_path)
+            except Exception:
+                # One file failing to download must not block the rest of
+                # the session from hydrating.
+                continue
     os.makedirs(local_dir, exist_ok=True)
     open(marker, "w").close()
 
@@ -1439,7 +1447,14 @@ def _persist_session(sid):
                 continue
             local_path = os.path.join(root, name)
             rel = os.path.relpath(local_path, local_dir).replace(os.sep, "/")
-            blob_storage.put_file(prefix + rel, local_path)
+            try:
+                blob_storage.put_file(prefix + rel, local_path)
+            except Exception:
+                # One file failing to upload (even after storage.py's own
+                # retries) must not stop the rest of the session's files
+                # from persisting. Losing one slide image is recoverable;
+                # aborting the whole batch silently drops many.
+                continue
 
 
 @app.before_request

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import mimetypes
 import os
+import time
 
 import requests
 
@@ -35,24 +36,33 @@ def _headers(extra=None):
     return headers
 
 
-def put_file(pathname, local_path):
+def put_file(pathname, local_path, attempts=3):
     """Upload a local file to Blob storage at an exact, stable pathname."""
     if not ENABLED:
         return
     content_type = mimetypes.guess_type(local_path)[0] or "application/octet-stream"
     with open(local_path, "rb") as f:
         data = f.read()
-    resp = requests.put(
-        f"{_BASE_URL}/{pathname}",
-        data=data,
-        headers=_headers({
-            "access": "public",
-            "x-content-type": content_type,
-            "x-allow-overwrite": "1",
-        }),
-        timeout=_TIMEOUT,
-    )
-    resp.raise_for_status()
+    last_error = None
+    for attempt in range(attempts):
+        try:
+            resp = requests.put(
+                f"{_BASE_URL}/{pathname}",
+                data=data,
+                headers=_headers({
+                    "access": "public",
+                    "x-content-type": content_type,
+                    "x-allow-overwrite": "1",
+                }),
+                timeout=_TIMEOUT,
+            )
+            resp.raise_for_status()
+            return
+        except requests.RequestException as exc:
+            last_error = exc
+            if attempt < attempts - 1:
+                time.sleep(0.5 * (attempt + 1))
+    raise last_error
 
 
 def list_prefix(prefix):
@@ -75,16 +85,24 @@ def list_prefix(prefix):
     return blobs
 
 
-def download_to(url, local_path):
+def download_to(url, local_path, attempts=3):
     if not ENABLED:
         return False
-    resp = requests.get(url, timeout=_TIMEOUT)
-    if resp.status_code != 200:
-        return False
-    os.makedirs(os.path.dirname(local_path), exist_ok=True)
-    with open(local_path, "wb") as f:
-        f.write(resp.content)
-    return True
+    for attempt in range(attempts):
+        try:
+            resp = requests.get(url, timeout=_TIMEOUT)
+            if resp.status_code == 200:
+                os.makedirs(os.path.dirname(local_path), exist_ok=True)
+                with open(local_path, "wb") as f:
+                    f.write(resp.content)
+                return True
+            if resp.status_code in (404,):
+                return False  # not a transient error; retrying won't help
+        except requests.RequestException:
+            pass
+        if attempt < attempts - 1:
+            time.sleep(0.5 * (attempt + 1))
+    return False
 
 
 def delete_prefix(prefix):
