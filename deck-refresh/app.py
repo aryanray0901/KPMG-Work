@@ -1442,7 +1442,7 @@ def _hydrate_session(sid):
     open(marker, "w").close()
 
 
-def _persist_session(sid):
+def _persist_session(sid, _is_retry=False):
     """Mirror every file in a session's local directory up to Blob storage."""
     if not (IS_VERCEL and blob_storage.ENABLED):
         return
@@ -1450,20 +1450,34 @@ def _persist_session(sid):
     if not os.path.isdir(local_dir):
         return
     prefix = _blob_prefix(sid)
+    attempted = 0
+    succeeded = 0
     for root, _dirs, files in os.walk(local_dir):
         for name in files:
             if name == ".hydrated":
                 continue
             local_path = os.path.join(root, name)
             rel = os.path.relpath(local_path, local_dir).replace(os.sep, "/")
+            attempted += 1
             try:
                 blob_storage.put_file(prefix + rel, local_path)
+                succeeded += 1
             except Exception:
                 # One file failing to upload (even after storage.py's own
                 # retries) must not stop the rest of the session's files
                 # from persisting. Losing one slide image is recoverable;
                 # aborting the whole batch silently drops many.
                 continue
+    # If literally every file failed, this almost certainly isn't a
+    # one-off blip on a single file -- it's sustained load on Blob's API
+    # (e.g. this session's persist landing on top of another burst of
+    # requests already in flight). A short backoff and one full retry of
+    # the whole batch clears this in practice; without it, a session can
+    # end up with nothing persisted at all, and every later request for
+    # it 404s no matter what it asks for.
+    if attempted > 0 and succeeded == 0 and not _is_retry:
+        time.sleep(2.0)
+        _persist_session(sid, _is_retry=True)
 
 
 def _hydrate_single_file(sid, rel_path):
