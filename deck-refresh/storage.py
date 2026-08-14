@@ -65,24 +65,32 @@ def put_file(pathname, local_path, attempts=3):
     raise last_error
 
 
-def list_prefix(prefix):
+def list_prefix(prefix, attempts=3):
     """Return metadata dicts (with pathname/url) for every blob under a prefix."""
     if not ENABLED:
         return []
-    blobs = []
-    cursor = None
-    while True:
-        params = {"prefix": prefix, "limit": "1000"}
-        if cursor:
-            params["cursor"] = cursor
-        resp = requests.get(_BASE_URL, params=params, headers=_headers(), timeout=_TIMEOUT)
-        resp.raise_for_status()
-        data = resp.json()
-        blobs.extend(data.get("blobs", []))
-        if not data.get("hasMore"):
-            break
-        cursor = data.get("cursor")
-    return blobs
+    last_error = None
+    for attempt in range(attempts):
+        try:
+            blobs = []
+            cursor = None
+            while True:
+                params = {"prefix": prefix, "limit": "1000"}
+                if cursor:
+                    params["cursor"] = cursor
+                resp = requests.get(_BASE_URL, params=params, headers=_headers(), timeout=_TIMEOUT)
+                resp.raise_for_status()
+                data = resp.json()
+                blobs.extend(data.get("blobs", []))
+                if not data.get("hasMore"):
+                    break
+                cursor = data.get("cursor")
+            return blobs
+        except requests.RequestException as exc:
+            last_error = exc
+            if attempt < attempts - 1:
+                time.sleep(0.4 * (attempt + 1))
+    raise last_error
 
 
 def download_to(url, local_path, attempts=3):

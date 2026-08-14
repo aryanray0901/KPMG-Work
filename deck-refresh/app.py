@@ -14,6 +14,7 @@ import re
 import io
 import json
 import time
+import random
 import uuid
 import shutil
 import subprocess
@@ -1410,10 +1411,18 @@ def _hydrate_session(sid):
     marker = os.path.join(local_dir, ".hydrated")
     if os.path.exists(marker):
         return  # this container already has this session's files
+    # A page can trigger a burst of ~20-40 simultaneous requests (e.g. every
+    # slide thumbnail loading at once), each potentially landing on a fresh
+    # container that all try to list the same Blob prefix in the same
+    # instant. A little jitter spreads that burst out instead of every
+    # container hammering the Blob API at the exact same millisecond.
+    time.sleep(random.uniform(0, 0.2))
+    if os.path.exists(marker):
+        return  # another request in this container finished while we waited
     try:
         blobs = blob_storage.list_prefix(_blob_prefix(sid))
     except Exception:
-        return  # listing failed; fall through to the local 404 path below
+        return  # listing failed even after storage.py's own retries; give up
     if not blobs:
         return  # unknown session id; normal 404 handling takes over
     prefix = _blob_prefix(sid)
@@ -1457,8 +1466,42 @@ def _persist_session(sid):
                 continue
 
 
+def _hydrate_single_file(sid, rel_path):
+    """Download exactly one file from a session, without pulling the rest.
+
+    Slide-image routes only ever need one specific file per request. If a
+    page fires 20 parallel image requests, using the bulk _hydrate_session
+    for each one means 20 containers each downloading up to 20 files --
+    a burst of ~400 Blob operations in the same instant, which is very
+    likely what pushes the API into transient failures. Fetching only the
+    one needed file per request keeps that burst to ~20 operations instead.
+    """
+    if not (IS_VERCEL and blob_storage.ENABLED):
+        return
+    local_dir = os.path.join(SESSIONS_DIR, sid)
+    local_path = os.path.join(local_dir, rel_path)
+    if os.path.exists(local_path):
+        return
+    exact_pathname = _blob_prefix(sid) + rel_path
+    try:
+        blobs = blob_storage.list_prefix(exact_pathname)
+    except Exception:
+        return
+    for item in blobs:
+        if item.get("pathname") == exact_pathname:
+            try:
+                blob_storage.download_to(item["url"], local_path)
+            except Exception:
+                pass
+            return
+
+
 @app.before_request
 def _hydrate_session_from_blob():
+    # slide_image and editor_slide_image hydrate only their one needed file
+    # (see the explicit calls in those routes) rather than the whole session.
+    if request.endpoint in ("slide_image", "editor_slide_image"):
+        return
     sid = (request.view_args or {}).get("sid")
     if sid:
         _hydrate_session(sid)
@@ -2042,8 +2085,9 @@ def result(sid):
 
 @app.route("/slide_image/<sid>/<which>/<int:n>", methods=["GET"])
 def slide_image(sid, which, n):
-    sess_dir = _session_dir(sid)
     prefix = "original" if which == "original" else "updated"
+    _hydrate_single_file(sid, os.path.join("render", f"{prefix}_{n}.png"))
+    sess_dir = _session_dir(sid)
     path = os.path.join(sess_dir, "render", f"{prefix}_{n}.png")
     if not os.path.exists(path):
         abort(404)
@@ -2728,6 +2772,8 @@ def editor_action(sid):
 
 @app.route("/editor_slide_image/<sid>/<int:version>/<int:n>", methods=["GET"])
 def editor_slide_image(sid, version, n):
+    rel = os.path.join("editor_render", f"version_{int(version):04d}", f"slide_{n}.png")
+    _hydrate_single_file(sid, rel)
     sess_dir = _session_dir(sid)
     path = os.path.join(_editor_render_dir(sess_dir, version), f"slide_{n}.png")
     if not os.path.exists(path):
