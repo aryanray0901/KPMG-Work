@@ -470,16 +470,19 @@ def render_pptx_to_images(pptx_path, out_dir, prefix):
 
     Native Office renderers are attempted first. Each native renderer gets a
     second attempt because PowerPoint and Keynote occasionally retain a COM or
-    Automation lock for a moment after a prior export. A built-in renderer is
-    the final fallback, so a successful edit still receives a fresh preview
-    even when the desktop renderer is missing or temporarily unavailable.
+    Automation lock for a moment after a prior export. Gotenberg (a remote
+    HTTP call, unlike the other engines) gets exactly one attempt -- retrying
+    it doesn't meaningfully improve odds within a single request, and doing
+    it twice would risk spending minutes of the request's time budget on one
+    engine before ever reaching the fast, always-available built-in
+    fallback. Built-in rendering is the final fallback, so a successful edit
+    still receives a fresh preview even when nothing else is available.
     """
     engines = [
         (_render_pptx_with_powerpoint, "Microsoft PowerPoint"),
         (_render_pptx_with_powerpoint_mac, "Microsoft PowerPoint for Mac"),
         (_render_pptx_with_libreoffice, "LibreOffice"),
         (_render_pptx_with_keynote, "Apple Keynote"),
-        (_render_pptx_with_gotenberg, "Gotenberg (LibreOffice)"),
     ]
     for renderer, label in engines:
         for attempt in range(2):
@@ -489,6 +492,11 @@ def render_pptx_to_images(pptx_path, out_dir, prefix):
                 return paths, label
             if attempt == 0:
                 time.sleep(0.35)
+
+    _clear_render_prefix(out_dir, prefix)
+    gotenberg_paths = _render_pptx_with_gotenberg(pptx_path, out_dir, prefix)
+    if gotenberg_paths:
+        return gotenberg_paths, "Gotenberg (LibreOffice)"
 
     _clear_render_prefix(out_dir, prefix)
     builtin_paths = render_pptx_builtin(pptx_path, out_dir, prefix)
@@ -1475,6 +1483,7 @@ def _hydrate_session(sid):
     if not blobs:
         return  # unknown session id; normal 404 handling takes over
     prefix = _blob_prefix(sid)
+    all_ok = True
     for item in blobs:
         rel = item.get("pathname", "")[len(prefix):]
         if not rel:
@@ -1482,13 +1491,22 @@ def _hydrate_session(sid):
         local_path = os.path.join(local_dir, rel)
         if not os.path.exists(local_path):
             try:
-                blob_storage.download_to(item["url"], local_path)
+                if not blob_storage.download_to(item["url"], local_path):
+                    all_ok = False
             except Exception:
                 # One file failing to download must not block the rest of
                 # the session from hydrating.
+                all_ok = False
                 continue
     os.makedirs(local_dir, exist_ok=True)
-    open(marker, "w").close()
+    if all_ok:
+        # Only mark this container as fully synced when every listed file
+        # actually landed. If we mark it after a partial failure, this
+        # container would skip hydration forever on every future request
+        # for this session -- permanently stuck missing whatever failed,
+        # even though the file may exist in Blob and would succeed on a
+        # later retry.
+        open(marker, "w").close()
 
 
 def _persist_session(sid, _is_retry=False):
@@ -1500,7 +1518,7 @@ def _persist_session(sid, _is_retry=False):
         return
     prefix = _blob_prefix(sid)
     attempted = 0
-    succeeded = 0
+    failed_paths = []
     for root, _dirs, files in os.walk(local_dir):
         for name in files:
             if name == ".hydrated":
@@ -1510,23 +1528,27 @@ def _persist_session(sid, _is_retry=False):
             attempted += 1
             try:
                 blob_storage.put_file(prefix + rel, local_path)
-                succeeded += 1
             except Exception:
                 # One file failing to upload (even after storage.py's own
                 # retries) must not stop the rest of the session's files
                 # from persisting. Losing one slide image is recoverable;
                 # aborting the whole batch silently drops many.
+                failed_paths.append((prefix + rel, local_path))
                 continue
-    # If literally every file failed, this almost certainly isn't a
-    # one-off blip on a single file -- it's sustained load on Blob's API
-    # (e.g. this session's persist landing on top of another burst of
-    # requests already in flight). A short backoff and one full retry of
-    # the whole batch clears this in practice; without it, a session can
-    # end up with nothing persisted at all, and every later request for
-    # it 404s no matter what it asks for.
-    if attempted > 0 and succeeded == 0 and not _is_retry:
+    # Retry whatever didn't make it, not just a total wipeout. A handful of
+    # dropped files under sustained load is just as broken as losing
+    # everything for anyone who later asks for exactly those files -- and
+    # since hydration now correctly refuses to mark a session "complete"
+    # after a partial failure (see _hydrate_session), a file that's truly
+    # never made it to Blob would otherwise 404 forever, on every container,
+    # no matter how many times it's requested.
+    if failed_paths and not _is_retry:
         time.sleep(2.0)
-        _persist_session(sid, _is_retry=True)
+        for blob_path, local_path in failed_paths:
+            try:
+                blob_storage.put_file(blob_path, local_path)
+            except Exception:
+                continue
 
 
 def _hydrate_single_file(sid, rel_path):
