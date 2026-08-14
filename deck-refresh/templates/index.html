@@ -57,5 +57,74 @@
 
   <footer class="note">Files are processed for the current session. Deck Refresh shows every exact or relative match for review and rejects any output that moves objects, changes slide count, or changes the theme.</footer>
 </div>
+<script type="module">
+// Uploads large files directly to Blob storage from the browser, bypassing
+// Vercel's 4.5MB request body limit on the Flask function entirely. If
+// this fails for any reason (no Blob store configured, e.g. local dev,
+// or a transient error), each form falls back to a normal multipart
+// submission automatically -- so nothing here can make uploads *more*
+// broken than before, only less limited on file size when it works.
+let uploadFn = null;
+try {
+  ({ upload: uploadFn } = await import("https://esm.sh/@vercel/blob@2.8.0/client"));
+} catch (err) {
+  console.warn("Blob client upload unavailable, forms will submit normally:", err);
+}
+
+async function submitViaBlob(form, fields) {
+  const uploads = {};
+  for (const field of fields) {
+    const input = form.querySelector(`[name="${field}"]`);
+    const file = input && input.files[0];
+    if (!file) return null;
+    const blob = await uploadFn(file.name, file, {
+      access: "public",
+      handleUploadUrl: "/api/blob-upload",
+    });
+    uploads[field] = { url: blob.url, filename: file.name };
+  }
+  return uploads;
+}
+
+function wireForm(form, fields) {
+  if (!form) return;
+  form.addEventListener("submit", async (event) => {
+    if (!uploadFn) return; // no Blob client available, let the form submit normally
+    event.preventDefault();
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn ? submitBtn.textContent : null;
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Uploading...";
+    }
+    try {
+      const uploads = await submitViaBlob(form, fields);
+      if (!uploads) throw new Error("No file selected");
+      const payload = {};
+      for (const field of fields) {
+        payload[field + "_blob_url"] = uploads[field].url;
+        payload[field + "_filename"] = uploads[field].filename;
+      }
+      const resp = await fetch(form.action, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      window.location.href = resp.url; // fetch follows redirects; land wherever the server sent us
+    } catch (err) {
+      console.warn("Client-direct upload failed, falling back to a normal form submit:", err);
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        if (originalText) submitBtn.textContent = originalText;
+      }
+      form.submit(); // bypasses this same listener, no infinite loop
+    }
+  });
+}
+
+wireForm(document.querySelector('form[action="/replace1to1"]'), ["primary_file", "data_file"]);
+wireForm(document.querySelector('form[action="/editor/upload"]'), ["editor_file"]);
+</script>
+
 </body>
 </html>

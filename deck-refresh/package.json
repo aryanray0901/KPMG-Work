@@ -1,0 +1,7 @@
+{
+  "name": "deck-refresh-blob-upload",
+  "private": true,
+  "dependencies": {
+    "@vercel/blob": "^2.8.0"
+  }
+}

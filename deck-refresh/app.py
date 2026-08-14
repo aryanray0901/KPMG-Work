@@ -147,6 +147,26 @@ def _pdf_to_slide_images(pdf_path, out_dir, prefix):
 GOTENBERG_URL = (os.environ.get("GOTENBERG_URL") or "").rstrip("/")
 
 
+def _download_blob_url(url, dest_path, timeout=60):
+    """Fetch a file the browser already uploaded directly to Blob storage.
+
+    Used by upload routes that support client-direct upload (see
+    api/blob-upload.js) to stay under Vercel's 4.5MB request body limit.
+    This is a one-off fetch of a just-uploaded file by its public URL --
+    distinct from storage.py's session-mirroring hydrate/persist logic.
+    """
+    try:
+        resp = requests.get(url, timeout=timeout)
+        if resp.status_code != 200:
+            return False
+        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+        with open(dest_path, "wb") as f:
+            f.write(resp.content)
+        return True
+    except Exception:
+        return False
+
+
 def _render_pptx_with_gotenberg(pptx_path, out_dir, prefix):
     """Render via a remote Gotenberg service (real LibreOffice, over HTTP).
 
@@ -1770,31 +1790,61 @@ def _attach_relative_sources(mapping_summary, relative_matches):
 
 @app.route("/replace1to1", methods=["POST"])
 def replace_one_to_one():
-    presentation_file = request.files.get("primary_file")
-    data_file = request.files.get("data_file")
-    if not presentation_file or not presentation_file.filename:
-        flash("Upload the PowerPoint presentation to refresh.")
-        return redirect(url_for("index"))
-    if not presentation_file.filename.lower().endswith(".pptx"):
-        flash("The 1:1 refresh requires a .pptx presentation.")
-        return redirect(url_for("index"))
-    if not data_file or not data_file.filename:
-        flash("Upload the matching Excel or CSV replacement file.")
-        return redirect(url_for("index"))
-    data_suffix = os.path.splitext(data_file.filename)[1].lower()
-    if data_suffix not in {".xlsx", ".xlsm", ".xls", ".csv"}:
-        flash("Replacement data must be an .xlsx, .xlsm, .xls, or .csv file.")
-        return redirect(url_for("index"))
+    if request.is_json:
+        # Client-direct upload: the browser already uploaded both files
+        # straight to Blob storage (see api/blob-upload.js), bypassing
+        # Vercel's 4.5MB Function body limit entirely. We're just told
+        # where to find them.
+        payload = request.get_json(silent=True) or {}
+        primary_url = payload.get("primary_file_blob_url")
+        primary_filename = payload.get("primary_file_filename") or ""
+        data_url = payload.get("data_file_blob_url")
+        data_filename = payload.get("data_file_filename") or ""
+        if not primary_url or not primary_filename.lower().endswith(".pptx"):
+            flash("Upload the PowerPoint presentation to refresh.")
+            return redirect(url_for("index"))
+        data_suffix = os.path.splitext(data_filename)[1].lower()
+        if not data_url or data_suffix not in {".xlsx", ".xlsm", ".xls", ".csv"}:
+            flash("Replacement data must be an .xlsx, .xlsm, .xls, or .csv file.")
+            return redirect(url_for("index"))
+        sid = uuid.uuid4().hex[:12]
+        sess_dir = os.path.join(SESSIONS_DIR, sid)
+        os.makedirs(sess_dir, exist_ok=True)
+        original_path = os.path.join(sess_dir, "original.pptx")
+        safe_data_name = secure_filename(data_filename) or f"replacement{data_suffix}"
+        data_path = os.path.join(sess_dir, safe_data_name)
+        if not _download_blob_url(primary_url, original_path) or not _download_blob_url(data_url, data_path):
+            shutil.rmtree(sess_dir, ignore_errors=True)
+            flash("The uploaded files could not be retrieved. Please try again.")
+            return redirect(url_for("index"))
+    else:
+        presentation_file = request.files.get("primary_file")
+        data_file = request.files.get("data_file")
+        if not presentation_file or not presentation_file.filename:
+            flash("Upload the PowerPoint presentation to refresh.")
+            return redirect(url_for("index"))
+        if not presentation_file.filename.lower().endswith(".pptx"):
+            flash("The 1:1 refresh requires a .pptx presentation.")
+            return redirect(url_for("index"))
+        if not data_file or not data_file.filename:
+            flash("Upload the matching Excel or CSV replacement file.")
+            return redirect(url_for("index"))
+        data_suffix = os.path.splitext(data_file.filename)[1].lower()
+        if data_suffix not in {".xlsx", ".xlsm", ".xls", ".csv"}:
+            flash("Replacement data must be an .xlsx, .xlsm, .xls, or .csv file.")
+            return redirect(url_for("index"))
+        primary_filename = presentation_file.filename
+        data_filename = data_file.filename
+        sid = uuid.uuid4().hex[:12]
+        sess_dir = os.path.join(SESSIONS_DIR, sid)
+        os.makedirs(sess_dir, exist_ok=True)
+        original_path = os.path.join(sess_dir, "original.pptx")
+        safe_data_name = secure_filename(data_filename) or f"replacement{data_suffix}"
+        data_path = os.path.join(sess_dir, safe_data_name)
+        presentation_file.save(original_path)
+        data_file.save(data_path)
 
-    sid = uuid.uuid4().hex[:12]
-    sess_dir = os.path.join(SESSIONS_DIR, sid)
-    os.makedirs(sess_dir, exist_ok=True)
-    original_path = os.path.join(sess_dir, "original.pptx")
     pending_path = os.path.join(sess_dir, "pending_updated.pptx")
-    safe_data_name = secure_filename(data_file.filename) or f"replacement{data_suffix}"
-    data_path = os.path.join(sess_dir, safe_data_name)
-    presentation_file.save(original_path)
-    data_file.save(data_path)
 
     try:
         try:
@@ -1802,14 +1852,14 @@ def replace_one_to_one():
                 original_path,
                 data_path,
                 pending_path,
-                data_filename=data_file.filename,
+                data_filename=data_filename,
             )
         except ReplacementError:
             report = _generic_replace_deck_1to1(
                 original_path,
                 data_path,
                 pending_path,
-                data_file.filename,
+                data_filename,
             )
         mapping_summary = compare_deck_replacements(original_path, pending_path)
         if report.get("relative_matches") is not None:
@@ -1841,8 +1891,8 @@ def replace_one_to_one():
     _save_session_meta(
         sess_dir,
         file_type="pptx",
-        original_filename=presentation_file.filename,
-        data_filename=data_file.filename,
+        original_filename=primary_filename,
+        data_filename=data_filename,
         applied_count=0,
         rendering_ok=False,
         slide_count=report.get("slide_count", 0),
@@ -2460,6 +2510,30 @@ def editor_new():
 
 @app.route("/editor/upload", methods=["POST"])
 def editor_upload():
+    if request.is_json:
+        # Client-direct upload: the browser already uploaded the file
+        # straight to Blob storage (see api/blob-upload.js), bypassing
+        # Vercel's 4.5MB Function body limit entirely.
+        payload = request.get_json(silent=True) or {}
+        blob_url = payload.get("editor_file_blob_url")
+        filename = payload.get("editor_file_filename") or ""
+        if not blob_url or not filename.lower().endswith(".pptx"):
+            flash("The editor supports .pptx files.")
+            return redirect(url_for("index"))
+        temp_dir = tempfile.mkdtemp(prefix="deck_editor_upload_")
+        temp_path = os.path.join(temp_dir, "upload.pptx")
+        try:
+            if not _download_blob_url(blob_url, temp_path):
+                flash("The uploaded file could not be retrieved. Please try again.")
+                return redirect(url_for("index"))
+            sid = _create_editor_session(temp_path, filename)
+        except Exception as exc:
+            flash(f"The PowerPoint could not be opened: {exc}")
+            return redirect(url_for("index"))
+        finally:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        return redirect(url_for("editor", sid=sid))
+
     uploaded = request.files.get("editor_file")
     if not uploaded or not uploaded.filename:
         flash("Choose a PowerPoint file to open in the editor.")
