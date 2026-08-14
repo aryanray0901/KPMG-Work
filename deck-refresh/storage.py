@@ -36,7 +36,7 @@ def _headers(extra=None):
     return headers
 
 
-def put_file(pathname, local_path, attempts=3):
+def put_file(pathname, local_path, attempts=5):
     """Upload a local file to Blob storage at an exact, stable pathname."""
     if not ENABLED:
         return
@@ -65,7 +65,7 @@ def put_file(pathname, local_path, attempts=3):
     raise last_error
 
 
-def list_prefix(prefix, attempts=3):
+def list_prefix(prefix, attempts=5):
     """Return metadata dicts (with pathname/url) for every blob under a prefix."""
     if not ENABLED:
         return []
@@ -93,7 +93,7 @@ def list_prefix(prefix, attempts=3):
     raise last_error
 
 
-def download_to(url, local_path, attempts=3):
+def download_to(url, local_path, attempts=5):
     if not ENABLED:
         return False
     for attempt in range(attempts):

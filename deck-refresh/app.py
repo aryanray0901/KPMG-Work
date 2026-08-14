@@ -1482,6 +1482,12 @@ def _hydrate_single_file(sid, rel_path):
     local_path = os.path.join(local_dir, rel_path)
     if os.path.exists(local_path):
         return
+    # Same reasoning as _hydrate_session: a page load can fire ~20 of these
+    # in the same instant, each landing on a different container. Jitter
+    # spreads the resulting Blob calls out instead of all firing at once.
+    time.sleep(random.uniform(0, 0.4))
+    if os.path.exists(local_path):
+        return  # another request in this container fetched it while we waited
     exact_pathname = _blob_prefix(sid) + rel_path
     try:
         blobs = blob_storage.list_prefix(exact_pathname)
