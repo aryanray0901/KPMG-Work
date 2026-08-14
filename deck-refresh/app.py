@@ -37,6 +37,7 @@ from builtin_preview import render_pptx as render_pptx_builtin
 from builder_ops import LAYOUTS, create_blank_deck, layout_operations, wizard
 from chart_contrast import ensure_chart_contrast
 import storage as blob_storage
+import requests
 from replacement_engine import (
     ReplacementError,
     apply_selected_deck_replacements,
@@ -141,6 +142,53 @@ def _pdf_to_slide_images(pdf_path, out_dir, prefix):
         return paths or None
     except Exception:
         return None
+
+
+GOTENBERG_URL = (os.environ.get("GOTENBERG_URL") or "").rstrip("/")
+
+
+def _render_pptx_with_gotenberg(pptx_path, out_dir, prefix):
+    """Render via a remote Gotenberg service (real LibreOffice, over HTTP).
+
+    Works identically on any host, including serverless platforms that
+    can't install LibreOffice locally -- this is what gives Vercel
+    deployments real PowerPoint-quality previews instead of the built-in
+    approximation. Only attempted when GOTENBERG_URL is configured.
+
+    Free hosting tiers for this service typically sleep after a period of
+    inactivity, so the first request after idle time can take 30+ seconds
+    to wake up. The generous timeout below accounts for that; once warm,
+    conversions are normally just a few seconds.
+    """
+    if not GOTENBERG_URL:
+        return None
+    pdf_path = os.path.join(out_dir, f"{prefix}_gotenberg.pdf")
+    try:
+        os.makedirs(out_dir, exist_ok=True)
+        with open(pptx_path, "rb") as f:
+            resp = requests.post(
+                f"{GOTENBERG_URL}/forms/libreoffice/convert",
+                files={
+                    "files": (
+                        os.path.basename(pptx_path),
+                        f,
+                        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                    )
+                },
+                timeout=90,
+            )
+        if resp.status_code != 200 or not resp.content:
+            return None
+        with open(pdf_path, "wb") as f:
+            f.write(resp.content)
+        return _pdf_to_slide_images(pdf_path, out_dir, prefix)
+    except Exception:
+        return None
+    finally:
+        try:
+            os.remove(pdf_path)
+        except OSError:
+            pass
 
 
 def _render_pptx_with_powerpoint(pptx_path, out_dir, prefix):
@@ -431,6 +479,7 @@ def render_pptx_to_images(pptx_path, out_dir, prefix):
         (_render_pptx_with_powerpoint_mac, "Microsoft PowerPoint for Mac"),
         (_render_pptx_with_libreoffice, "LibreOffice"),
         (_render_pptx_with_keynote, "Apple Keynote"),
+        (_render_pptx_with_gotenberg, "Gotenberg (LibreOffice)"),
     ]
     for renderer, label in engines:
         for attempt in range(2):
