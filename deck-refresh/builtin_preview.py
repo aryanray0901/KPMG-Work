@@ -73,9 +73,26 @@ def _luminance(rgb):
     return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]
 
 
+_FONTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts")
+
+
 @lru_cache(maxsize=128)
 def _font_path(bold: bool, italic: bool):
     candidates = []
+    # Bundled fonts first: these ship with the app itself, so rendering
+    # never depends on whether the host OS happens to have fonts
+    # installed. Vercel's serverless containers generally don't -- without
+    # this, every text element silently fell back to PIL's built-in
+    # default font, a tiny bitmap font that ignores the requested size
+    # entirely, which is why text looked uniformly small everywhere.
+    if bold and italic:
+        candidates.append(os.path.join(_FONTS_DIR, "DejaVuSans-BoldOblique.ttf"))
+    elif bold:
+        candidates.append(os.path.join(_FONTS_DIR, "DejaVuSans-Bold.ttf"))
+    elif italic:
+        candidates.append(os.path.join(_FONTS_DIR, "DejaVuSans-Oblique.ttf"))
+    else:
+        candidates.append(os.path.join(_FONTS_DIR, "DejaVuSans.ttf"))
     if os.name == "nt":
         windir = os.environ.get("WINDIR", r"C:\Windows")
         fonts = os.path.join(windir, "Fonts")
